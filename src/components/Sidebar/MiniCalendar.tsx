@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useCalendar } from "@/context/CalendarContext";
 import { useToast } from "@/context/ToastContext";
 
@@ -16,6 +16,7 @@ interface DayCell {
 export const MiniCalendar: React.FC = () => {
   const { miniCalMonth, setMiniCalMonth, selectedDate, setSelectedDate, events } = useCalendar();
   const { showToast } = useToast();
+  const [showPicker, setShowPicker] = useState(false);
 
   const year = miniCalMonth.getFullYear();
   const month = miniCalMonth.getMonth(); // 0-indexed
@@ -40,14 +41,11 @@ export const MiniCalendar: React.FC = () => {
   // Build grid
   const dayNames = ["M", "T", "W", "T", "F", "S", "S"];
 
-  // 1st of current month day-of-week (0=Mon, ..., 6=Sun)
   const firstDayObj = new Date(year, month, 1);
   let startDayOfWeek = firstDayObj.getDay() - 1;
   if (startDayOfWeek < 0) startDayOfWeek = 6; // Sunday = 6
 
-  // Total days in current month
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  // Total days in prev month
   const daysInPrevMonth = new Date(year, month, 0).getDate();
 
   const todayObj = new Date();
@@ -56,7 +54,6 @@ export const MiniCalendar: React.FC = () => {
 
   const cells: DayCell[] = [];
 
-  // Previous month padding
   for (let i = startDayOfWeek - 1; i >= 0; i--) {
     const num = daysInPrevMonth - i;
     const prevDate = new Date(year, month - 1, num);
@@ -72,7 +69,6 @@ export const MiniCalendar: React.FC = () => {
     });
   }
 
-  // Current month days
   for (let i = 1; i <= daysInMonth; i++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
     const hasEvent = events.some((e) => e.dateStr === dateStr);
@@ -86,7 +82,6 @@ export const MiniCalendar: React.FC = () => {
     });
   }
 
-  // Next month padding to complete 42 cells
   const remaining = 42 - cells.length;
   for (let i = 1; i <= remaining; i++) {
     const nextDate = new Date(year, month + 1, i);
@@ -112,10 +107,66 @@ export const MiniCalendar: React.FC = () => {
 
   return (
     <div className="mini-cal">
-      <div className="mini-cal-header">
-        <span className="mini-cal-title">
-          {monthNames[month]} {year}
+      <div className="mini-cal-header" style={{ position: "relative" }}>
+        <span
+          className="mini-cal-title"
+          style={{ cursor: "pointer", textDecoration: "underline rgba(255,255,255,0.2)" }}
+          onClick={() => setShowPicker(!showPicker)}
+          title="Click to select month/year"
+        >
+          {monthNames[month]} {year} ▾
         </span>
+
+        {showPicker && (
+          <div
+            style={{
+              position: "absolute",
+              top: "24px",
+              left: 0,
+              zIndex: 20,
+              background: "var(--bg-1)",
+              border: "1px solid var(--border-bright)",
+              padding: "8px",
+              display: "flex",
+              gap: "6px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+            }}
+          >
+            <select
+              className="form-select"
+              style={{ fontSize: "11px", padding: "4px" }}
+              value={month}
+              onChange={(e) => {
+                const m = parseInt(e.target.value);
+                setMiniCalMonth(new Date(year, m, 1));
+                setShowPicker(false);
+              }}
+            >
+              {monthNames.map((mName, mIdx) => (
+                <option key={mIdx} value={mIdx}>
+                  {mName}
+                </option>
+              ))}
+            </select>
+            <select
+              className="form-select"
+              style={{ fontSize: "11px", padding: "4px" }}
+              value={year}
+              onChange={(e) => {
+                const y = parseInt(e.target.value);
+                setMiniCalMonth(new Date(y, month, 1));
+                setShowPicker(false);
+              }}
+            >
+              {[2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030].map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="mini-cal-nav">
           <button title="Previous month" onClick={handlePrevMonth}>
             ‹
@@ -125,6 +176,7 @@ export const MiniCalendar: React.FC = () => {
           </button>
         </div>
       </div>
+
       <div className="mini-cal-grid">
         {dayNames.map((d, i) => (
           <div key={i} className="mini-cal-day-name">

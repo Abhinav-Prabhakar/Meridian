@@ -6,7 +6,7 @@ import { useToast } from "@/context/ToastContext";
 import { Scratchpad } from "./Scratchpad";
 
 export const DetailPanel: React.FC = () => {
-  const { selectedDate, events, openEventDetails } = useCalendar();
+  const { selectedDate, events, openEventDetails, openReport } = useCalendar();
   const { showToast } = useToast();
 
   const monday = new Date(selectedDate);
@@ -106,7 +106,7 @@ export const DetailPanel: React.FC = () => {
       <div className="detail-section">
         <div className="section-header">
           <span className="label">This week</span>
-          <button className="link-btn" onClick={() => showToast("Opening report…")}>
+          <button className="link-btn" onClick={openReport}>
             REPORT →
           </button>
         </div>

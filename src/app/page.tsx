@@ -17,6 +17,7 @@ import { ShareModal } from "@/components/ShareModal";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { ThemeCustomizerModal } from "@/components/ThemeCustomizerModal";
 import { NewCalendarModal } from "@/components/NewCalendarModal";
+import { WeeklyReportModal } from "@/components/WeeklyReportModal";
 
 function MainContent() {
   const { showToast } = useToast();
@@ -107,6 +108,7 @@ function MainContent() {
       <ShortcutsModal />
       <ThemeCustomizerModal />
       <NewCalendarModal />
+      <WeeklyReportModal />
     </>
   );
 }

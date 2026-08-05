@@ -13,7 +13,7 @@ const hours = [
 const dayAbbrs = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export const WeekBody: React.FC = () => {
-  const { selectedDate, events, updateEvent, openEventDetails, openNewEventModal } = useCalendar();
+  const { selectedDate, events, updateEvent, openEventDetails, openNewEventModal, quickFilter } = useCalendar();
   const { activeCategories } = useCalendarFilter();
   const { showToast } = useToast();
 
@@ -104,7 +104,12 @@ export const WeekBody: React.FC = () => {
 
         const dateStr = `${columnDate.getFullYear()}-${String(columnDate.getMonth() + 1).padStart(2, "0")}-${String(columnDate.getDate()).padStart(2, "0")}`;
         const isToday = dateStr === todayStr;
-        const dayEvents = events.filter((e) => e.dateStr === dateStr);
+
+        const dayEvents = events.filter((e) => {
+          if (e.dateStr !== dateStr) return false;
+          if (quickFilter !== "all" && e.cat !== quickFilter) return false;
+          return true;
+        });
 
         return (
           <div
@@ -142,6 +147,21 @@ export const WeekBody: React.FC = () => {
                   onClick={(e) => handleEventClick(e, ev)}
                   title="Drag to reschedule"
                 >
+                  {ev.priority === "urgent" && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "6px",
+                        width: "6px",
+                        height: "6px",
+                        borderRadius: "50%",
+                        background: "var(--red)",
+                        boxShadow: "0 0 6px var(--red)",
+                      }}
+                      title="Urgent Priority"
+                    ></span>
+                  )}
                   {compact ? (
                     <>
                       <div className="event-title">{ev.title}</div>
