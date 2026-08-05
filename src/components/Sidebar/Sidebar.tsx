@@ -6,13 +6,42 @@ import { MiniCalendar } from "./MiniCalendar";
 import { CalendarFilters } from "./CalendarFilters";
 import { UserCard } from "./UserCard";
 import { useCalendar } from "@/context/CalendarContext";
+import { useTheme } from "@/context/ThemeContext";
 
 export const Sidebar: React.FC = () => {
   const { openNewEventModal } = useCalendar();
+  const { openThemeModal, accentColor } = useTheme();
 
   return (
     <aside className="sidebar fade-up">
-      <Brand />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ flex: 1 }}>
+          <Brand />
+        </div>
+        <button
+          title="Customize Theme Color"
+          style={{
+            background: "var(--bg-2)",
+            border: "1px solid var(--border)",
+            width: "28px",
+            height: "28px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+          onClick={openThemeModal}
+        >
+          <span
+            style={{
+              width: "12px",
+              height: "12px",
+              borderRadius: "50%",
+              background: accentColor,
+            }}
+          ></span>
+        </button>
+      </div>
 
       <button
         className="new-event-btn"

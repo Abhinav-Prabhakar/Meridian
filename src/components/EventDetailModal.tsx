@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useCalendar } from "@/context/CalendarContext";
 import { useToast } from "@/context/ToastContext";
 
@@ -15,6 +15,7 @@ const categoryColors: Record<string, { bg: string; color: string; label: string 
 export const EventDetailModal: React.FC = () => {
   const { viewingEvent, closeEventDetails, deleteEvent, openNewEventModal } = useCalendar();
   const { showToast } = useToast();
+  const [rsvp, setRsvp] = useState<"going" | "maybe" | "declined">("going");
 
   if (!viewingEvent) return null;
 
@@ -44,20 +45,49 @@ export const EventDetailModal: React.FC = () => {
     });
   };
 
+  const handleRsvpChange = (status: "going" | "maybe" | "declined") => {
+    setRsvp(status);
+    showToast(`Status updated: ${status.toUpperCase()}`);
+  };
+
   return (
     <div className="modal-overlay" onClick={closeEventDetails}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <span
-            className="next-event-tag"
-            style={{
-              background: catStyle.bg,
-              color: catStyle.color,
-              margin: 0,
-            }}
-          >
-            {catStyle.label}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span
+              className="next-event-tag"
+              style={{
+                background: catStyle.bg,
+                color: catStyle.color,
+                margin: 0,
+              }}
+            >
+              {catStyle.label}
+            </span>
+            <span
+              style={{
+                fontSize: "9px",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                padding: "2px 6px",
+                background:
+                  rsvp === "going"
+                    ? "var(--accent-dim)"
+                    : rsvp === "maybe"
+                    ? "var(--yellow-dim)"
+                    : "rgba(255, 77, 77, 0.15)",
+                color:
+                  rsvp === "going"
+                    ? "var(--accent)"
+                    : rsvp === "maybe"
+                    ? "var(--yellow)"
+                    : "var(--red)",
+              }}
+            >
+              {rsvp.toUpperCase()}
+            </span>
+          </div>
           <button className="modal-close" onClick={closeEventDetails}>
             ✕
           </button>
@@ -72,6 +102,60 @@ export const EventDetailModal: React.FC = () => {
           </div>
           <div style={{ fontSize: "11px", color: "var(--fg-3)", fontFamily: "JetBrains Mono, monospace" }}>
             Date: {viewingEvent.dateStr}
+          </div>
+        </div>
+
+        {/* RSVP buttons */}
+        <div style={{ marginBottom: "16px" }}>
+          <div className="form-label" style={{ marginBottom: "6px" }}>
+            RSVP Status
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              style={{
+                flex: 1,
+                padding: "6px",
+                fontSize: "11px",
+                background: rsvp === "going" ? "var(--bg-3)" : "var(--bg-2)",
+                border: rsvp === "going" ? "1px solid var(--accent)" : "1px solid var(--border)",
+                color: rsvp === "going" ? "var(--accent)" : "var(--fg-2)",
+                cursor: "pointer",
+              }}
+              onClick={() => handleRsvpChange("going")}
+            >
+              Going
+            </button>
+            <button
+              type="button"
+              style={{
+                flex: 1,
+                padding: "6px",
+                fontSize: "11px",
+                background: rsvp === "maybe" ? "var(--bg-3)" : "var(--bg-2)",
+                border: rsvp === "maybe" ? "1px solid var(--yellow)" : "1px solid var(--border)",
+                color: rsvp === "maybe" ? "var(--yellow)" : "var(--fg-2)",
+                cursor: "pointer",
+              }}
+              onClick={() => handleRsvpChange("maybe")}
+            >
+              Maybe
+            </button>
+            <button
+              type="button"
+              style={{
+                flex: 1,
+                padding: "6px",
+                fontSize: "11px",
+                background: rsvp === "declined" ? "var(--bg-3)" : "var(--bg-2)",
+                border: rsvp === "declined" ? "1px solid var(--red)" : "1px solid var(--border)",
+                color: rsvp === "declined" ? "var(--red)" : "var(--fg-2)",
+                cursor: "pointer",
+              }}
+              onClick={() => handleRsvpChange("declined")}
+            >
+              Decline
+            </button>
           </div>
         </div>
 

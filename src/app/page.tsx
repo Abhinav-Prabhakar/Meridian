@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from "react";
 import { ToastProvider, useToast } from "@/context/ToastContext";
 import { CalendarFilterProvider } from "@/context/CalendarFilterContext";
 import { CalendarProvider, useCalendar } from "@/context/CalendarContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { Sidebar } from "@/components/Sidebar/Sidebar";
 import { Topbar } from "@/components/Topbar/Topbar";
 import { CalendarArea, CalendarAreaRef } from "@/components/Calendar/CalendarArea";
@@ -14,6 +15,8 @@ import { SearchModal } from "@/components/SearchModal";
 import { NotificationsModal } from "@/components/NotificationsModal";
 import { ShareModal } from "@/components/ShareModal";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
+import { ThemeCustomizerModal } from "@/components/ThemeCustomizerModal";
+import { NewCalendarModal } from "@/components/NewCalendarModal";
 
 function MainContent() {
   const { showToast } = useToast();
@@ -102,6 +105,8 @@ function MainContent() {
       <NotificationsModal />
       <ShareModal />
       <ShortcutsModal />
+      <ThemeCustomizerModal />
+      <NewCalendarModal />
     </>
   );
 }
@@ -109,11 +114,13 @@ function MainContent() {
 export default function Home() {
   return (
     <ToastProvider>
-      <CalendarFilterProvider>
-        <CalendarProvider>
-          <MainContent />
-        </CalendarProvider>
-      </CalendarFilterProvider>
+      <ThemeProvider>
+        <CalendarFilterProvider>
+          <CalendarProvider>
+            <MainContent />
+          </CalendarProvider>
+        </CalendarFilterProvider>
+      </ThemeProvider>
     </ToastProvider>
   );
 }

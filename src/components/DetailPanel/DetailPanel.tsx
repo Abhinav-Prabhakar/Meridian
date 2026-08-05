@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
-import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
+import { useCalendar } from "@/context/CalendarContext";
 import { useToast } from "@/context/ToastContext";
+import { Scratchpad } from "./Scratchpad";
 
 export const DetailPanel: React.FC = () => {
-  const { selectedDate, events } = useCalendar();
+  const { selectedDate, events, openEventDetails } = useCalendar();
   const { showToast } = useToast();
 
   const monday = new Date(selectedDate);
@@ -27,6 +28,9 @@ export const DetailPanel: React.FC = () => {
     events
       .filter((e) => e.dateStr >= todayStr)
       .sort((a, b) => (a.dateStr + a.start).localeCompare(b.dateStr + b.start))[0] || {
+      id: "demo",
+      dateStr: todayStr,
+      start: 15,
       title: "Architecture Review",
       cat: "focus",
       time: "15:00 — 16:00",
@@ -215,7 +219,7 @@ export const DetailPanel: React.FC = () => {
             <div
               key={ev.id}
               className="upcoming-item"
-              onClick={() => showToast(`Opening: ${ev.title}`)}
+              onClick={() => openEventDetails(ev)}
             >
               <div className="upcoming-time">
                 {ev.time.split(" — ")[0]}
@@ -235,6 +239,9 @@ export const DetailPanel: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Scratchpad */}
+      <Scratchpad />
     </aside>
   );
 };

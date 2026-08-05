@@ -1,30 +1,16 @@
 "use client";
 
 import React from "react";
-import { useCalendarFilter, CalendarCategory } from "@/context/CalendarFilterContext";
+import { useCalendarFilter } from "@/context/CalendarFilterContext";
 import { useCalendar } from "@/context/CalendarContext";
 import { useToast } from "@/context/ToastContext";
 
-interface CalendarItemDef {
-  key: CalendarCategory;
-  name: string;
-  colorVar: string;
-}
-
-const calendarItems: CalendarItemDef[] = [
-  { key: "strategy", name: "Strategy", colorVar: "var(--accent)" },
-  { key: "meeting", name: "Meetings", colorVar: "var(--orange)" },
-  { key: "focus", name: "Focus Time", colorVar: "var(--cyan)" },
-  { key: "personal", name: "Personal", colorVar: "var(--pink)" },
-  { key: "travel", name: "Travel", colorVar: "var(--yellow)" },
-];
-
 export const CalendarFilters: React.FC = () => {
-  const { activeCategories, toggleCategory } = useCalendarFilter();
-  const { events, openNewEventModal } = useCalendar();
+  const { calendars, activeCategories, toggleCategory, openAddCalendarModal } = useCalendarFilter();
+  const { events } = useCalendar();
   const { showToast } = useToast();
 
-  const handleToggle = (item: CalendarItemDef) => {
+  const handleToggle = (item: { key: string; name: string }) => {
     const isVisible = toggleCategory(item.key);
     showToast(`${isVisible ? "Showing" : "Hiding"} ${item.name} calendar`);
   };
@@ -35,16 +21,16 @@ export const CalendarFilters: React.FC = () => {
         <span>My Calendars</span>
         <button
           className="add-btn"
-          title="Add calendar event"
-          onClick={() => openNewEventModal()}
+          title="Add new calendar"
+          onClick={openAddCalendarModal}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 5v14M5 12h14" />
           </svg>
         </button>
       </div>
-      {calendarItems.map((item) => {
-        const isChecked = activeCategories[item.key];
+      {calendars.map((item) => {
+        const isChecked = activeCategories[item.key] !== false;
         const count = events.filter((e) => e.cat === item.key).length;
         const countFormatted = String(count).padStart(2, "0");
 
