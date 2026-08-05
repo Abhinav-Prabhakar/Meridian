@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useCalendar, EventPriority } from "@/context/CalendarContext";
+import { useCalendar } from "@/context/CalendarContext";
 import { useToast } from "@/context/ToastContext";
 import { CalendarCategory } from "@/context/CalendarFilterContext";
 
@@ -22,7 +22,6 @@ export const NewEventModal: React.FC = () => {
   const [startHour, setStartHour] = useState(9);
   const [dur, setDur] = useState(1);
   const [meta, setMeta] = useState("");
-  const [priority, setPriority] = useState<EventPriority>("normal");
 
   const isEditing = Boolean(newEventInitialData?.id);
 
@@ -35,7 +34,6 @@ export const NewEventModal: React.FC = () => {
         if (newEventInitialData.title) setTitle(newEventInitialData.title);
         if (newEventInitialData.cat) setCat(newEventInitialData.cat);
         if (newEventInitialData.meta) setMeta(newEventInitialData.meta);
-        if (newEventInitialData.priority) setPriority(newEventInitialData.priority);
       } else {
         setDateStr(formatDateStr(selectedDate));
         setStartHour(10);
@@ -43,7 +41,6 @@ export const NewEventModal: React.FC = () => {
         setMeta("");
         setCat("meeting");
         setDur(1);
-        setPriority("normal");
       }
     }
   }, [isNewEventOpen, newEventInitialData, selectedDate]);
@@ -70,7 +67,6 @@ export const NewEventModal: React.FC = () => {
       dur,
       time: timeStr,
       meta: meta.trim() || undefined,
-      priority,
     };
 
     if (isEditing && newEventInitialData?.id) {
@@ -124,21 +120,6 @@ export const NewEventModal: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Priority Level</label>
-              <select
-                className="form-select"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as EventPriority)}
-              >
-                <option value="normal">Normal</option>
-                <option value="high">High Priority</option>
-                <option value="urgent">Urgent 🔥</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
               <label className="form-label">Date</label>
               <input
                 type="date"
@@ -147,7 +128,9 @@ export const NewEventModal: React.FC = () => {
                 onChange={(e) => setDateStr(e.target.value)}
               />
             </div>
+          </div>
 
+          <div className="form-row">
             <div className="form-group">
               <label className="form-label">Start Time</label>
               <select
@@ -168,20 +151,20 @@ export const NewEventModal: React.FC = () => {
                 })}
               </select>
             </div>
-          </div>
 
-          <div className="form-group">
-            <label className="form-label">Duration</label>
-            <select
-              className="form-select"
-              value={dur}
-              onChange={(e) => setDur(parseFloat(e.target.value))}
-            >
-              <option value={0.5}>30 minutes</option>
-              <option value={1}>1 hour</option>
-              <option value={1.5}>1.5 hours</option>
-              <option value={2}>2 hours</option>
-            </select>
+            <div className="form-group">
+              <label className="form-label">Duration</label>
+              <select
+                className="form-select"
+                value={dur}
+                onChange={(e) => setDur(parseFloat(e.target.value))}
+              >
+                <option value={0.5}>30 minutes</option>
+                <option value={1}>1 hour</option>
+                <option value={1.5}>1.5 hours</option>
+                <option value={2}>2 hours</option>
+              </select>
+            </div>
           </div>
 
           <div className="form-group">

@@ -9,7 +9,7 @@ import { useCalendar } from "@/context/CalendarContext";
 import { useTheme } from "@/context/ThemeContext";
 
 export const Sidebar: React.FC = () => {
-  const { openNewEventModal, openShortcuts } = useCalendar();
+  const { openNewEventModal } = useCalendar();
   const { openThemeModal, accentColor } = useTheme();
 
   return (
@@ -57,34 +57,6 @@ export const Sidebar: React.FC = () => {
       <MiniCalendar />
       <CalendarFilters />
       <UserCard />
-
-      <button
-        className="link-btn"
-        style={{
-          marginTop: "auto",
-          fontSize: "10px",
-          color: "var(--fg-3)",
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          padding: "4px 0",
-        }}
-        onClick={openShortcuts}
-      >
-        <kbd
-          style={{
-            fontFamily: "JetBrains Mono, monospace",
-            fontSize: "10px",
-            padding: "1px 5px",
-            background: "var(--bg-2)",
-            color: "var(--accent)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          ?
-        </kbd>
-        <span>Keyboard Shortcuts</span>
-      </button>
     </aside>
   );
 };

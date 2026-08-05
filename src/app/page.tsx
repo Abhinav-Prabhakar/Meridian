@@ -4,7 +4,7 @@ import React, { useRef, useEffect } from "react";
 import { ToastProvider, useToast } from "@/context/ToastContext";
 import { CalendarFilterProvider } from "@/context/CalendarFilterContext";
 import { CalendarProvider, useCalendar } from "@/context/CalendarContext";
-import { ThemeProvider } from "@/context/ThemeContext";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { Sidebar } from "@/components/Sidebar/Sidebar";
 import { Topbar } from "@/components/Topbar/Topbar";
 import { CalendarArea, CalendarAreaRef } from "@/components/Calendar/CalendarArea";
@@ -24,10 +24,22 @@ function MainContent() {
   const {
     selectedDate,
     setSelectedDate,
+    setCurrentView,
     openNewEventModal,
+    closeNewEventModal,
     openSearch,
+    closeSearch,
     openShortcuts,
+    closeShortcuts,
+    closeEventDetails,
+    closeNotifications,
+    openShare,
+    closeShare,
+    openReport,
+    closeReport,
   } = useCalendar();
+  const { openThemeModal, closeThemeModal } = useTheme();
+
   const calendarAreaRef = useRef<CalendarAreaRef>(null);
 
   const handleScrollToToday = () => {
@@ -42,17 +54,31 @@ function MainContent() {
       showToast("Welcome back, Alex — 3 meetings left today");
     }, 600);
 
-    // Keyboard shortcuts
+    // Comprehensive professional keyboard shortcuts
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement
       ) {
+        if (e.key === "Escape") {
+          (e.target as HTMLElement).blur();
+        }
         return;
       }
+
       const key = e.key.toLowerCase();
-      if (key === "n") {
+
+      if (key === "escape") {
+        closeNewEventModal();
+        closeEventDetails();
+        closeSearch();
+        closeNotifications();
+        closeShare();
+        closeShortcuts();
+        closeThemeModal();
+        closeReport();
+      } else if (key === "n" || key === "c") {
         e.preventDefault();
         openNewEventModal();
       } else if (key === "t") {
@@ -61,17 +87,44 @@ function MainContent() {
         setSelectedDate(today);
         showToast("Scrolled to today");
         handleScrollToToday();
-      } else if (key === "arrowleft") {
+      } else if (key === "w") {
+        e.preventDefault();
+        setCurrentView("week");
+        showToast("Switched to Week view");
+      } else if (key === "d") {
+        e.preventDefault();
+        setCurrentView("day");
+        showToast("Switched to Day view");
+      } else if (key === "m") {
+        e.preventDefault();
+        setCurrentView("month");
+        showToast("Switched to Month view");
+      } else if (key === "a") {
+        e.preventDefault();
+        setCurrentView("agenda");
+        showToast("Switched to Agenda view");
+      } else if (key === "e") {
+        e.preventDefault();
+        openShare();
+      } else if (key === "r") {
+        e.preventDefault();
+        openReport();
+      } else if (key === "p") {
+        e.preventDefault();
+        openThemeModal();
+      } else if (key === "j" || key === "arrowleft") {
+        e.preventDefault();
         const prevDate = new Date(selectedDate);
         prevDate.setDate(prevDate.getDate() - 7);
         setSelectedDate(prevDate);
-        showToast("Jumped to previous week");
-      } else if (key === "arrowright") {
+        showToast("Jumped to previous period");
+      } else if (key === "k" || key === "arrowright") {
+        e.preventDefault();
         const nextDate = new Date(selectedDate);
         nextDate.setDate(nextDate.getDate() + 7);
         setSelectedDate(nextDate);
-        showToast("Jumped to next week");
-      } else if (key === "/") {
+        showToast("Jumped to next period");
+      } else if (key === "/" || key === "s") {
         e.preventDefault();
         openSearch();
       } else if (key === "?" || (e.shiftKey && key === "/")) {
@@ -85,7 +138,26 @@ function MainContent() {
       clearTimeout(timer);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [showToast, selectedDate, setSelectedDate, openNewEventModal, openSearch, openShortcuts]);
+  }, [
+    showToast,
+    selectedDate,
+    setSelectedDate,
+    setCurrentView,
+    openNewEventModal,
+    closeNewEventModal,
+    openSearch,
+    closeSearch,
+    openShortcuts,
+    closeShortcuts,
+    closeEventDetails,
+    closeNotifications,
+    openShare,
+    closeShare,
+    openReport,
+    closeReport,
+    openThemeModal,
+    closeThemeModal,
+  ]);
 
   return (
     <>
