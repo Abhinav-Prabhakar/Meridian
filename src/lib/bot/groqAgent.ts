@@ -205,7 +205,8 @@ export async function processAgentMessage(
   userText: string,
   userApiKey?: string,
   imageDataUrl?: string,
-  referenceDate?: string
+  referenceDate?: string,
+  channelGuide?: string
 ): Promise<{
   reply: string;
   toolCallsExecuted: Array<{ name: string; args: Record<string, unknown> }>;
@@ -241,6 +242,7 @@ export async function processAgentMessage(
         `Reference Date (today): ${todayStr}.`,
         'Use the reference date to interpret relative terms like "today", "tomorrow", and "next Friday", and always emit dates in YYYY-MM-DD format.',
         `Current User Schedule: ${JSON.stringify(eventsSnapshot)}.`,
+        channelGuide ? `Channel guidance:\n${channelGuide}` : "",
         "You have tools to manage the calendar. Inspect or modify events with them, then reply in concise Markdown summarizing what you did or found.",
       ].join("\n"),
     },

@@ -8,6 +8,9 @@ export interface ChannelStatus {
   active: boolean;
   statusText: string;
   description: string;
+  address?: string;
+  authorizeUrl?: string;
+  connectionId?: string;
 }
 
 export interface CaspianBotConfig {
@@ -15,6 +18,7 @@ export interface CaspianBotConfig {
   groqApiKey?: string;
   caspianApiKey?: string;
   caspianBaseUrl?: string;
+  emailAddress?: string;
   activeChannels: IntegrationChannel[];
 }
 

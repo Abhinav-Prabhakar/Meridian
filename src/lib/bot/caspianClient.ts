@@ -1,10 +1,20 @@
-import { CommClient } from "caspian-sdk";
+import { CommClient, type Connection, type Message } from "caspian-sdk";
+import { formatDateStr } from "@/lib/dateUtils";
 import { CaspianBotConfig, ChannelStatus, IntegrationChannel } from "./types";
 import { processAgentMessage } from "./groqAgent";
+
+export interface IntegrationResult {
+  success: boolean;
+  message: string;
+  address?: string;
+  authorizeUrl?: string;
+}
 
 class CaspianManager {
   private client: CommClient | null = null;
   private isListening = false;
+  private isHandlerRegistered = false;
+  private readonly connectionIds: Partial<Record<IntegrationChannel, string>> = {};
   private config: CaspianBotConfig = {
     activeChannels: [],
   };
@@ -17,7 +27,7 @@ class CaspianManager {
       connected: false,
       active: false,
       statusText: "Not connected",
-      description: "Ask your Telegram bot to schedule events & view calendar free times.",
+      description: "Ask your Telegram bot to schedule, edit, remove, or query events.",
     },
     email: {
       id: "email",
@@ -26,7 +36,7 @@ class CaspianManager {
       connected: false,
       active: false,
       statusText: "Ready to connect",
-      description: "Send emails to your agent identity to auto-schedule events.",
+      description: "Send emails to your Caspian agent identity to manage your calendar.",
     },
     slack: {
       id: "slack",
@@ -34,8 +44,8 @@ class CaspianManager {
       icon: "💬",
       connected: false,
       active: false,
-      statusText: "Upcoming integration",
-      description: "Slash commands & direct DMs with your workspace calendar assistant.",
+      statusText: "Ready to connect",
+      description: "Use direct messages and workspace mentions with the same calendar assistant.",
     },
     discord: {
       id: "discord",
@@ -43,81 +53,233 @@ class CaspianManager {
       icon: "🎮",
       connected: false,
       active: false,
-      statusText: "Upcoming integration",
-      description: "Discord server integration for personal and team calendar queries.",
+      statusText: "Ready to connect",
+      description: "Use your Discord server with the same calendar assistant and CRUD tools.",
     },
   };
 
   public getStatus(): ChannelStatus[] {
-    return Object.values(this.channels);
+    return Object.values(this.channels).map((channel) => ({ ...channel }));
   }
 
   public getConfig(): CaspianBotConfig {
     return { ...this.config };
   }
 
-  public async connectTelegram(botToken: string, groqApiKey?: string): Promise<{ success: boolean; message: string }> {
-    if (!botToken || botToken.trim().length === 0) {
-      return { success: false, message: "Bot token cannot be empty" };
+  public getPublicConfig(): { activeChannels: IntegrationChannel[]; groqConfigured: boolean; caspianConfigured: boolean } {
+    return {
+      activeChannels: [...this.config.activeChannels],
+      groqConfigured: Boolean(this.config.groqApiKey || process.env.GROQ_API_KEY),
+      caspianConfigured: Boolean(this.config.caspianApiKey || process.env.CASPIAN_API_KEY),
+    };
+  }
+
+  public async connectTelegram(botToken: string, groqApiKey?: string): Promise<IntegrationResult> {
+    if (!botToken?.trim()) {
+      return { success: false, message: "Bot token cannot be empty." };
     }
 
-    this.config.telegramBotToken = botToken;
-    if (groqApiKey) this.config.groqApiKey = groqApiKey;
-
-    if (!this.config.activeChannels.includes("telegram")) {
-      this.config.activeChannels.push("telegram");
-    }
-
-    this.channels.telegram.connected = true;
-    this.channels.telegram.active = true;
-    this.channels.telegram.statusText = "Connected & Active";
+    if (groqApiKey?.trim()) this.config.groqApiKey = groqApiKey.trim();
 
     try {
-      if (!this.client) {
-        this.client = new CommClient();
-      }
-
-      // Initialize Caspian Telegram adapter
-      if (typeof (this.client as any).connectTelegram === "function") {
-        await (this.client as any).connectTelegram({ bot_token: botToken, botToken });
-      }
-
-      // Register unified Caspian onMessage handler
-      if (!this.isListening) {
-        this.client.onMessage(async (message: any) => {
-          try {
-            const userText = message.text || message.content || "";
-            const result = await processAgentMessage(userText, this.config.groqApiKey);
-            if (message.reply && typeof message.reply === "function") {
-              await message.reply(result.reply);
-            }
-          } catch (err) {
-            console.error("Caspian message handler error:", err);
-          }
-        });
-
-        // Non-blocking listen start
-        if (typeof (this.client as any).listen === "function") {
-          (this.client as any).listen().catch((err: any) => {
-            console.warn("Caspian listener status notice:", err?.message || err);
-          });
-        }
-        this.isListening = true;
-      }
-
-      return { success: true, message: "Telegram bot connected via Caspian SDK!" };
-    } catch (err: any) {
-      console.warn("Caspian connection fallback (virtual connection enabled):", err?.message);
-      return { success: true, message: "Telegram channel active via Caspian Gateway!" };
+      const connection = await this.getClient().connectTelegram({ botToken: botToken.trim() });
+      this.config.telegramBotToken = botToken.trim();
+      this.markConnected("telegram", connection);
+      await this.startListener();
+      return { success: true, message: "Telegram bot connected via Caspian SDK." };
+    } catch (error: unknown) {
+      return { success: false, message: this.errorMessage(error, "Telegram connection failed") };
     }
   }
 
-  public async disconnectTelegram(): Promise<void> {
-    this.config.telegramBotToken = undefined;
-    this.config.activeChannels = this.config.activeChannels.filter((c) => c !== "telegram");
-    this.channels.telegram.connected = false;
-    this.channels.telegram.active = false;
-    this.channels.telegram.statusText = "Not connected";
+  public async connectEmail(username?: string, groqApiKey?: string): Promise<IntegrationResult> {
+    if (groqApiKey?.trim()) this.config.groqApiKey = groqApiKey.trim();
+
+    try {
+      const connection = await this.getClient().connectEmail(username?.trim() ? { username: username.trim() } : {});
+      this.config.emailAddress = connection.address;
+      this.markConnected("email", connection);
+      await this.startListener();
+      return {
+        success: true,
+        message: connection.address ? `Email agent connected at ${connection.address}.` : "Email agent connected.",
+        address: connection.address,
+      };
+    } catch (error: unknown) {
+      return { success: false, message: this.errorMessage(error, "Email connection failed") };
+    }
+  }
+
+  public async installSlack(displayName?: string, groqApiKey?: string): Promise<IntegrationResult> {
+    if (groqApiKey?.trim()) this.config.groqApiKey = groqApiKey.trim();
+
+    try {
+      const connection = await this.getClient().installSlack(displayName?.trim() ? { displayName: displayName.trim() } : {});
+      this.markConnected("slack", connection);
+      await this.startListener();
+      return {
+        success: true,
+        message: connection.authorize_url ? "Slack authorization is ready." : "Slack app connected.",
+        authorizeUrl: connection.authorize_url,
+      };
+    } catch (error: unknown) {
+      return { success: false, message: this.errorMessage(error, "Slack connection failed") };
+    }
+  }
+
+  public async installDiscord(displayName?: string, groqApiKey?: string): Promise<IntegrationResult> {
+    if (groqApiKey?.trim()) this.config.groqApiKey = groqApiKey.trim();
+
+    try {
+      const connection = await this.getClient().installDiscord(displayName?.trim() ? { displayName: displayName.trim() } : {});
+      this.markConnected("discord", connection);
+      await this.startListener();
+      return {
+        success: true,
+        message: connection.authorize_url ? "Discord authorization is ready." : "Discord bot connected.",
+        authorizeUrl: connection.authorize_url,
+      };
+    } catch (error: unknown) {
+      return { success: false, message: this.errorMessage(error, "Discord connection failed") };
+    }
+  }
+
+  public async refreshStatus(): Promise<ChannelStatus[]> {
+    await Promise.all(
+      (Object.entries(this.connectionIds) as Array<[IntegrationChannel, string | undefined]>).map(
+        async ([channel, connectionId]) => {
+          if (!connectionId) return;
+          try {
+            const connection = await this.getClient().getConnection(connectionId);
+            this.markConnected(channel, connection);
+          } catch {
+            // Keep the last known status if the gateway is temporarily unavailable.
+          }
+        }
+      )
+    );
+    return this.getStatus();
+  }
+
+  public async testEmail(): Promise<{ success: boolean; message: string }> {
+    try {
+      await this.getClient().testEmail({
+        connectionId: this.connectionIds.email,
+        subject: "Meridian integration test",
+        text: "Meridian email integration is connected and ready to manage your calendar.",
+      });
+      return { success: true, message: "Test email sent." };
+    } catch (error: unknown) {
+      return { success: false, message: this.errorMessage(error, "Test email failed") };
+    }
+  }
+
+  public async disconnect(channel: IntegrationChannel): Promise<void> {
+    delete this.connectionIds[channel];
+    this.config.activeChannels = this.config.activeChannels.filter((active) => active !== channel);
+    if (channel === "telegram") this.config.telegramBotToken = undefined;
+    if (channel === "email") this.config.emailAddress = undefined;
+    this.channels[channel] = {
+      ...this.channels[channel],
+      connected: false,
+      active: false,
+      statusText: "Not connected",
+      address: undefined,
+      authorizeUrl: undefined,
+      connectionId: undefined,
+    };
+  }
+
+  private getClient(): CommClient {
+    if (!this.client) {
+      this.client = new CommClient({
+        apiKey: this.config.caspianApiKey || process.env.CASPIAN_API_KEY,
+        baseUrl: this.config.caspianBaseUrl || process.env.CASPIAN_BASE_URL,
+      });
+    }
+    return this.client;
+  }
+
+  private async startListener(): Promise<void> {
+    if (!this.isHandlerRegistered) {
+      this.getClient().onMessage(async (message) => this.handleMessage(message));
+      this.isHandlerRegistered = true;
+    }
+
+    if (!this.isListening) {
+      this.isListening = true;
+      this.getClient()
+        .listen({ ack: "On it — checking your calendar…" })
+        .catch((error: unknown) => {
+          this.isListening = false;
+          console.warn("Caspian listener stopped:", this.errorMessage(error, "listener error"));
+        });
+    }
+  }
+
+  private async handleMessage(message: Message): Promise<void> {
+    const userText = message.text?.trim() || "Attached image request";
+    const imageData = this.getImageData(message);
+
+    try {
+      const channelGuide = await this.getClient().channelGuide(message.channel);
+      const result = await processAgentMessage(
+        userText,
+        this.config.groqApiKey || process.env.GROQ_API_KEY,
+        imageData,
+        formatDateStr(new Date()),
+        channelGuide
+      );
+      await message.reply(result.reply);
+    } catch (error: unknown) {
+      const messageText = this.errorMessage(error, "Calendar assistant failed");
+      try {
+        await message.reply(`I couldn't complete that request. ${messageText}`);
+      } catch {
+        console.error("Caspian reply failed:", messageText);
+      }
+    }
+  }
+
+  private getImageData(message: Message): string | undefined {
+    const image = message.media.find((media) => {
+      const mimeType = media.mimeType || media.mime_type || "";
+      return mimeType.startsWith("image/");
+    });
+    if (!image) return undefined;
+    if (image.url) return image.url;
+    if (image.data) {
+      const mimeType = image.mimeType || image.mime_type || "image/*";
+      return image.data.startsWith("data:") ? image.data : `data:${mimeType};base64,${image.data}`;
+    }
+    return undefined;
+  }
+
+  private markConnected(channel: IntegrationChannel, connection: Connection): void {
+    this.connectionIds[channel] = connection.id;
+    const awaitingAuthorization = Boolean(connection.authorize_url);
+    const active = connection.status === "active" || connection.status === "connected";
+    this.channels[channel] = {
+      ...this.channels[channel],
+      connected: active,
+      active,
+      statusText: awaitingAuthorization ? "Authorization required" : active ? "Connected & Active" : connection.status || "Provisioning",
+      address: connection.address,
+      authorizeUrl: connection.authorize_url,
+      connectionId: connection.id,
+    };
+
+    if (active && !this.config.activeChannels.includes(channel)) {
+      this.config.activeChannels.push(channel);
+    }
+  }
+
+  private errorMessage(error: unknown, fallback: string): string {
+    if (error && typeof error === "object" && "detail" in error && typeof error.detail === "string") {
+      return error.detail;
+    }
+    if (error instanceof Error && error.message) return error.message;
+    return fallback;
   }
 }
 
