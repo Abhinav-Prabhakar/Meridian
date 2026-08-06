@@ -986,6 +986,7 @@ body {
   object-fit: cover;
   object-position: center;
   display: block;
+  opacity: 0.5;
 }
 
 .auth-brand {
