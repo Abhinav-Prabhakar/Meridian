@@ -11,6 +11,7 @@ export const IntegrationsModal: React.FC = () => {
 
   const [telegramToken, setTelegramToken] = useState<string>("");
   const [emailUsername, setEmailUsername] = useState<string>("");
+  const [slackDisplayName, setSlackDisplayName] = useState<string>("");
   const [groqKey, setGroqKey] = useState<string>("");
   const [groqConfigured, setGroqConfigured] = useState(false);
   const [channels, setChannels] = useState<ChannelStatus[]>([
@@ -38,8 +39,8 @@ export const IntegrationsModal: React.FC = () => {
       icon: "💬",
       connected: false,
       active: false,
-      statusText: "Roadmap: Phase 2",
-      description: "Slash commands & direct DMs with your workspace Groq calendar assistant.",
+      statusText: "Ready to connect",
+      description: "Install the shared Slack app for direct messages and workspace mentions.",
     },
     {
       id: "discord",
@@ -108,7 +109,7 @@ export const IntegrationsModal: React.FC = () => {
         showToast(data.error || data.message || "Failed to update integration");
       }
     } catch {
-      showToast("Integrations saved locally with Groq API Key");
+      showToast("Failed to connect Telegram integration");
     } finally {
       setIsSaving(false);
     }
@@ -160,6 +161,58 @@ export const IntegrationsModal: React.FC = () => {
       showToast(res.ok ? data.message : data.message || data.error || "Test email failed");
     } catch {
       showToast("Test email failed");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDisconnectChannel = async (channel: "telegram" | "email" | "slack" | "discord") => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/bot/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel, action: "disconnect" }),
+      });
+      const data = await res.json();
+      if (data.status) setChannels(data.status);
+      showToast(res.ok ? `${channel[0].toUpperCase()}${channel.slice(1)} disconnected` : data.message || "Disconnect failed");
+    } catch {
+      showToast("Disconnect failed");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInstallSlack = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!groqConfigured && !groqKey.trim()) {
+      setKeyError(true);
+      showToast("❌ Add a Groq API key before connecting an AI integration.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/bot/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel: "slack",
+          action: "connect",
+          displayName: slackDisplayName,
+          groqApiKey: groqKey,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.status) setChannels(data.status);
+        showToast(data.message || "Slack app ready");
+      } else {
+        showToast(data.message || data.error || "Failed to connect Slack");
+      }
+    } catch {
+      showToast("Failed to connect Slack");
     } finally {
       setIsSaving(false);
     }
@@ -343,22 +396,46 @@ export const IntegrationsModal: React.FC = () => {
                         <button type="button" className="btn-cancel" onClick={handleTestEmail} disabled={isSaving}>
                           Send test email
                         </button>
-                        <button
-                          type="button"
-                          className="btn-cancel"
-                          onClick={() => fetch("/api/bot/connect", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ channel: "email", action: "disconnect" }),
-                          }).then(() => fetch("/api/bot/connect").then((res) => res.json()).then((data) => setChannels(data.status)))}
-                          disabled={isSaving}
-                        >
+                        <button type="button" className="btn-cancel" onClick={() => handleDisconnectChannel("email")} disabled={isSaving}>
                           Disconnect
                         </button>
                       </>
                     )}
                     <button type="submit" className="btn-submit" disabled={isSaving}>
                       {isSaving ? "Saving..." : emailChannel?.connected ? "Update Integration" : "Connect Email"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {ch.id === "slack" && (
+                <form onSubmit={handleInstallSlack} style={{ marginTop: "8px", borderTop: "1px dashed var(--border)", paddingTop: "12px" }}>
+                  <div className="form-group" style={{ marginBottom: "10px" }}>
+                    <label className="form-label" style={{ fontSize: "11px" }}>
+                      Display name (optional)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ fontSize: "12px" }}
+                      placeholder="Meridian Calendar"
+                      value={slackDisplayName}
+                      onChange={(e) => setSlackDisplayName(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
+                    {ch.authorizeUrl && (
+                      <a href={ch.authorizeUrl} target="_blank" rel="noreferrer" className="link-btn">
+                        Authorize Slack →
+                      </a>
+                    )}
+                    {ch.connected && (
+                      <button type="button" className="btn-cancel" onClick={() => handleDisconnectChannel("slack")} disabled={isSaving}>
+                        Disconnect
+                      </button>
+                    )}
+                    <button type="submit" className="btn-submit" disabled={isSaving}>
+                      {isSaving ? "Starting..." : ch.authorizeUrl ? "Regenerate Link" : "Connect Slack"}
                     </button>
                   </div>
                 </form>
