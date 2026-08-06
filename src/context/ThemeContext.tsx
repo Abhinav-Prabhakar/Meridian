@@ -37,6 +37,30 @@ export const useTheme = () => useContext(ThemeContext);
 
 const THEME_STORAGE_KEY = "meridian_accent_color";
 
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function rgba(hex: string, alpha: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function brighten(hex: string, amount: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  const f = (c: number) => Math.min(255, Math.round(c + (255 - c) * amount));
+  return `rgb(${f(r)}, ${f(g)}, ${f(b)})`;
+}
+
+function darken(hex: string, amount: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  const f = (c: number) => Math.round(c * (1 - amount));
+  return `rgb(${f(r)}, ${f(g)}, ${f(b)})`;
+}
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [accentColor, setAccentColorState] = useState<string>("#d4ff3d");
   const [isThemeModalOpen, setIsThemeModalOpen] = useState<boolean>(false);
@@ -45,6 +69,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAccentColorState(color);
     if (typeof document !== "undefined") {
       document.documentElement.style.setProperty("--accent", color);
+      document.documentElement.style.setProperty("--accent-hover", brighten(color, 0.12));
+      document.documentElement.style.setProperty("--accent-dark", darken(color, 0.4));
+      document.documentElement.style.setProperty("--accent-dim", rgba(color, 0.12));
+      document.documentElement.style.setProperty("--accent-glow-strong", rgba(color, 0.5));
+      document.documentElement.style.setProperty("--accent-glow-soft", rgba(color, 0.4));
+      document.documentElement.style.setProperty("--accent-focus", rgba(color, 0.08));
     }
     try {
       localStorage.setItem(THEME_STORAGE_KEY, color);

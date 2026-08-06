@@ -13,6 +13,11 @@
   --fg-3: #5a5d65;
   --accent: #d4ff3d;
   --accent-dim: rgba(212, 255, 61, 0.12);
+  --accent-hover: #e0ff5e;
+  --accent-dark: #92b32c;
+  --accent-glow-strong: rgba(212, 255, 61, 0.5);
+  --accent-glow-soft: rgba(212, 255, 61, 0.4);
+  --accent-focus: rgba(212, 255, 61, 0.08);
   --orange: #ff9248;
   --orange-dim: rgba(255, 146, 72, 0.12);
   --cyan: #5dd9d4;
@@ -108,9 +113,9 @@ body {
   cursor: pointer; transition: all 0.15s ease;
 }
 .new-event-btn:hover {
-  background: #e0ff5e;
+  background: var(--accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px -8px rgba(212, 255, 61, 0.5);
+  box-shadow: 0 8px 24px -8px var(--accent-glow-strong);
 }
 .new-event-btn:active { transform: translateY(0); }
 .new-event-btn svg { width: 16px; height: 16px; }
@@ -238,7 +243,7 @@ body {
 }
 .avatar {
   width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--accent), #92b32c);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700;
   font-family: 'Space Grotesk', sans-serif;
@@ -712,8 +717,8 @@ body {
   letter-spacing: 0.02em;
 }
 .join-btn:hover {
-  background: #e0ff5e;
-  box-shadow: 0 6px 20px -4px rgba(212, 255, 61, 0.4);
+  background: var(--accent-hover);
+  box-shadow: 0 6px 20px -4px var(--accent-glow-soft);
 }
 
 .stats-grid {
@@ -962,7 +967,7 @@ body {
   color: #0a0b0d; padding: 8px 16px; font-size: 12px;
   font-weight: 600; cursor: pointer; transition: all 0.15s;
 }
-.btn-submit:hover { background: #e0ff5e; }
+.btn-submit:hover { background: var(--accent-hover); }
 
 /* ============ MERIDIAN AUTH STYLES ============ */
 .auth-shell {
@@ -1431,7 +1436,7 @@ body {
 .input:focus {
   border-color: var(--accent);
   background: var(--bg-1);
-  box-shadow: 0 0 0 3px rgba(212, 255, 61, 0.08);
+  box-shadow: 0 0 0 3px var(--accent-focus);
 }
 .input.with-toggle { padding-right: 44px; }
 .field-toggle {
@@ -1540,9 +1545,9 @@ body {
   transition: left 0.5s;
 }
 .submit-btn:hover {
-  background: #e0ff5e;
+  background: var(--accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px -10px rgba(212, 255, 61, 0.5);
+  box-shadow: 0 10px 28px -10px var(--accent-glow-strong);
 }
 .submit-btn:hover::before { left: 100%; }
 .submit-btn:active { transform: translateY(0); }
