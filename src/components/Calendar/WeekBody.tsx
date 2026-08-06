@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
 import { useCalendarFilter } from "@/context/CalendarFilterContext";
 import { useToast } from "@/context/ToastContext";
@@ -23,10 +23,31 @@ function buildTimeRangeStr(startHour: number, durHours: number): string {
   return `${formatHourMin(startHour)} — ${formatHourMin(startHour + durHours)}`;
 }
 
+interface DragPreview {
+  id: string;
+  dateStr: string;
+  start: number;
+}
+
+interface DragSession {
+  event: CalendarEvent;
+  pointerId: number;
+  grabOffsetY: number;
+  moved: boolean;
+  preview: DragPreview;
+  frame: number | null;
+  onMove: (event: PointerEvent) => void;
+  onUp: () => void;
+  onCancel: () => void;
+}
+
 export const WeekBody: React.FC = () => {
   const { selectedDate, events, updateEvent, openEventDetails, openNewEventModal } = useCalendar();
   const { activeCategories } = useCalendarFilter();
   const { showToast } = useToast();
+  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  const dragSessionRef = useRef<DragSession | null>(null);
+  const suppressClickRef = useRef(false);
 
   const monday = new Date(selectedDate);
   const dayOfWeek = (monday.getDay() + 6) % 7;
@@ -38,10 +59,7 @@ export const WeekBody: React.FC = () => {
   const [nowTop, setNowTop] = useState<number>(() => getNowPosition());
 
   useEffect(() => {
-    const updateNowPosition = () => {
-      const now = new Date();
-      setNowTop(getNowPosition(now));
-    };
+    const updateNowPosition = () => setNowTop(getNowPosition(new Date()));
     updateNowPosition();
     const interval = setInterval(updateNowPosition, 60000);
     return () => clearInterval(interval);
@@ -49,6 +67,10 @@ export const WeekBody: React.FC = () => {
 
   const handleEventClick = (e: React.MouseEvent, ev: CalendarEvent) => {
     e.stopPropagation();
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
     openEventDetails(ev);
   };
 
@@ -57,42 +79,120 @@ export const WeekBody: React.FC = () => {
     openNewEventModal({ dateStr, startHour });
   };
 
-  // Drag and Drop handlers with 10-minute snapping
-  const handleDragStart = (e: React.DragEvent, ev: CalendarEvent) => {
-    e.dataTransfer.setData("text/plain", ev.id);
-    e.dataTransfer.effectAllowed = "move";
+  const finishPointerDrag = (commit: boolean) => {
+    const session = dragSessionRef.current;
+    if (!session) return;
+
+    window.removeEventListener("pointermove", session.onMove);
+    window.removeEventListener("pointerup", session.onUp);
+    window.removeEventListener("pointercancel", session.onCancel);
+    if (session.frame !== null) cancelAnimationFrame(session.frame);
+
+    if (commit && session.moved) {
+      const { event } = session;
+      const { dateStr, start } = session.preview;
+      const changed = event.dateStr !== dateStr || event.start !== start;
+
+      if (changed) {
+        updateEvent(event.id, {
+          ...event,
+          dateStr,
+          start,
+          time: buildTimeRangeStr(start, event.dur),
+        });
+
+        const [year, month, day] = dateStr.split("-").map(Number);
+        const dropDate = new Date(year, month - 1, day);
+        const dayName = dayAbbrs[(dropDate.getDay() + 6) % 7];
+        showToast(`Rescheduled "${event.title}" to ${dayName} at ${formatHourMin(start)}`);
+      }
+    }
+
+    if (session.moved) suppressClickRef.current = true;
+    dragSessionRef.current = null;
+    setDragPreview(null);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>, ev: CalendarEvent) => {
+    if (e.button !== 0 || dragSessionRef.current) return;
+    if ((e.target as HTMLElement).closest(".event-resize-handle")) return;
+
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    suppressClickRef.current = false;
+    const eventRect = e.currentTarget.getBoundingClientRect();
+    const initialPreview: DragPreview = {
+      id: ev.id,
+      dateStr: ev.dateStr,
+      start: ev.start,
+    };
+
+    const session: DragSession = {
+      event: ev,
+      pointerId: e.pointerId,
+      grabOffsetY: e.clientY - eventRect.top,
+      moved: false,
+      preview: initialPreview,
+      frame: null,
+      onMove: () => {},
+      onUp: () => {},
+      onCancel: () => {},
+    };
+
+    const schedulePreview = (preview: DragPreview) => {
+      session.preview = preview;
+      if (session.frame !== null) return;
+
+      session.frame = requestAnimationFrame(() => {
+        session.frame = null;
+        if (dragSessionRef.current === session) setDragPreview(session.preview);
+      });
+    };
+
+    session.onMove = (moveEvent) => {
+      if (moveEvent.pointerId !== session.pointerId) return;
+
+      const distance = Math.hypot(moveEvent.clientX - e.clientX, moveEvent.clientY - e.clientY);
+      if (!session.moved && distance < 4) return;
+      session.moved = true;
+
+      const pointTarget = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+      const targetColumn = pointTarget?.closest<HTMLElement>(".day-column");
+      if (!targetColumn?.dataset.date) return;
+
+      const columnRect = targetColumn.getBoundingClientRect();
+      const durationMinutes = ev.dur * 60;
+      const pointerOffsetMinutes = moveEvent.clientY - columnRect.top - session.grabOffsetY;
+      const maxStartMinutes = 14 * 60 - durationMinutes;
+      const snappedMinutes = Math.max(
+        0,
+        Math.min(maxStartMinutes, Math.round(pointerOffsetMinutes / 10) * 10)
+      );
+
+      schedulePreview({
+        id: ev.id,
+        dateStr: targetColumn.dataset.date,
+        start: 7 + snappedMinutes / 60,
+      });
+    };
+
+    session.onUp = () => finishPointerDrag(true);
+    session.onCancel = () => finishPointerDrag(false);
+    dragSessionRef.current = session;
+    setDragPreview(initialPreview);
+
+    window.addEventListener("pointermove", session.onMove);
+    window.addEventListener("pointerup", session.onUp);
+    window.addEventListener("pointercancel", session.onCancel);
   };
 
-  const handleDropOnColumn = (e: React.DragEvent, targetDateStr: string) => {
-    e.preventDefault();
-    const eventId = e.dataTransfer.getData("text/plain");
-    const targetEvent = events.find((ev) => ev.id === eventId);
-    if (!targetEvent) return;
-
-    const columnRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const offsetY = e.clientY - columnRect.top;
-    const snappedMinutes = Math.max(0, Math.min(13.83 * 60, Math.round(offsetY / 10) * 10));
-    const newStart = 7 + snappedMinutes / 60;
-    const newTimeStr = buildTimeRangeStr(newStart, targetEvent.dur);
-
-    updateEvent(eventId, {
-      ...targetEvent,
-      dateStr: targetDateStr,
-      start: newStart,
-      time: newTimeStr,
-    });
-
-    const [y, m, d] = targetDateStr.split("-").map(Number);
-    const dropDate = new Date(y, m - 1, d);
-    const dayName = dayAbbrs[(dropDate.getDay() + 6) % 7];
-
-    showToast(`Rescheduled "${targetEvent.title}" to ${dayName} at ${formatHourMin(newStart)}`);
-  };
+  useEffect(() => () => {
+    const session = dragSessionRef.current;
+    if (!session) return;
+    window.removeEventListener("pointermove", session.onMove);
+    window.removeEventListener("pointerup", session.onUp);
+    window.removeEventListener("pointercancel", session.onCancel);
+    if (session.frame !== null) cancelAnimationFrame(session.frame);
+  }, []);
 
   // Bottom handle resize handler (10-minute snapping)
   const handleResizeStart = (e: React.MouseEvent, ev: CalendarEvent) => {
@@ -140,15 +240,16 @@ export const WeekBody: React.FC = () => {
 
         const dateStr = formatDateStr(columnDate);
         const isToday = dateStr === todayStr;
-        const dayEvents = events.filter((e) => e.dateStr === dateStr);
+        const dayEvents = events.filter((event) =>
+          dragPreview?.id === event.id ? dragPreview.dateStr === dateStr : event.dateStr === dateStr
+        );
 
         return (
           <div
             key={dayIdx}
             className={`day-column ${isToday ? "today-col" : ""}`}
             data-day={dayIdx}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDropOnColumn(e, dateStr)}
+            data-date={dateStr}
           >
             {Array.from({ length: 14 }).map((_, hIdx) => (
               <div
@@ -161,7 +262,9 @@ export const WeekBody: React.FC = () => {
             ))}
 
             {dayEvents.map((ev) => {
-              const top = (ev.start - 7) * 60;
+              const isDragging = dragPreview?.id === ev.id;
+              const eventStart = isDragging ? dragPreview.start : ev.start;
+              const top = (eventStart - 7) * 60;
               const height = ev.dur * 60 - 3;
               const compact = ev.dur <= 0.5;
               const isVisible = activeCategories[ev.cat] !== false;
@@ -169,12 +272,11 @@ export const WeekBody: React.FC = () => {
               return (
                 <div
                   key={ev.id}
-                  draggable={true}
-                  onDragStart={(e) => handleDragStart(e, ev)}
+                  onPointerDown={(e) => handlePointerDown(e, ev)}
                   className={`event cat-${ev.cat} ${compact ? "event-compact" : ""} ${
                     !isVisible ? "dimmed" : ""
-                  }`}
-                  style={{ top: `${top}px`, height: `${height}px`, position: "absolute" }}
+                  } ${isDragging ? "is-dragging" : ""}`}
+                  style={{ top: `${top}px`, height: `${height}px`, position: "absolute", touchAction: "none" }}
                   onClick={(e) => handleEventClick(e, ev)}
                   title="Drag to reschedule (10 min snap), drag bottom handle to resize"
                 >

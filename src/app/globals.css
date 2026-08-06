@@ -513,6 +513,14 @@ body {
   box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6);
   border-color: var(--border-bright);
 }
+.event.is-dragging {
+  transition: none;
+  transform: none;
+  z-index: 10;
+  cursor: grabbing;
+  box-shadow: 0 12px 28px -8px rgba(0,0,0,0.7);
+  opacity: 0.92;
+}
 .event.event-compact {
   padding: 4px 8px 4px 10px;
   display: flex; align-items: center; gap: 8px;
@@ -1593,4 +1601,3 @@ body {
   .form-top-bar { padding: 14px 20px; }
   .top-bar-meta { font-size: 10px; }
 }
-
