@@ -7,7 +7,7 @@ import { BotChatMessage } from "@/lib/bot/types";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
 export const BotChatDrawer: React.FC = () => {
-  const { isBotChatOpen, closeBotChat, addEvent, updateEvent, deleteEvent, events, openIntegrations } = useCalendar();
+  const { isBotChatOpen, closeBotChat, addEvent, updateEvent, deleteEvent, events, openIntegrations, selectedDate } = useCalendar();
   const { showToast } = useToast();
 
   const [messages, setMessages] = useState<BotChatMessage[]>([
@@ -81,7 +81,7 @@ export const BotChatDrawer: React.FC = () => {
     if ((!queryText && !imagePreview) || isLoading) return;
 
     const userMsg: BotChatMessage = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: "user",
       content: queryText || "Attached image request",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -102,13 +102,14 @@ export const BotChatDrawer: React.FC = () => {
           message: queryText,
           image: currentImage,
           clientEvents: events,
+          today: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`,
         }),
       });
 
       const data = await res.json();
       if (res.ok) {
         const assistantMsg: BotChatMessage = {
-          id: (Date.now() + 1).toString(),
+          id: crypto.randomUUID(),
           role: "assistant",
           content: data.reply,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
