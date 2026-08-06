@@ -5,7 +5,7 @@ import { getCalendarEvents, syncCalendarEvents } from "@/lib/bot/calendarStore";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message, apiKey, clientEvents } = body;
+    const { message, apiKey, clientEvents, image } = body;
 
     if (clientEvents && Array.isArray(clientEvents)) {
       syncCalendarEvents(clientEvents);
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = await processAgentMessage(message, apiKey);
+    const result = await processAgentMessage(message, apiKey, image);
     const updatedEvents = getCalendarEvents();
 
     return NextResponse.json({
@@ -26,6 +26,8 @@ export async function POST(req: Request) {
       toolCalls: result.toolCallsExecuted,
       executedAction: result.executedAction,
       newEvent: result.newEvent,
+      updatedEvent: result.updatedEvent,
+      deletedId: result.deletedId,
       allEvents: updatedEvents,
     });
   } catch (error: any) {

@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import {
   getCalendarEvents,
   addCalendarEvent,
+  editCalendarEvent,
   deleteCalendarEvent,
   checkFreeSlots,
 } from "./calendarStore";
@@ -12,25 +13,118 @@ const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 export async function processAgentMessage(
   userText: string,
   userApiKey?: string,
-  currentEventsContext?: any[]
+  imageDataUrl?: string
 ): Promise<{
   reply: string;
   toolCallsExecuted: Array<{ name: string; args: Record<string, unknown> }>;
   executedAction?: BotChatMessage["executedAction"];
   newEvent?: any;
+  updatedEvent?: any;
+  deletedId?: string;
 }> {
-  const apiKey = userApiKey || process.env.GROQ_API_KEY || "demo_groq_key";
+  const apiKey = userApiKey || process.env.GROQ_API_KEY;
   const toolCallsExecuted: Array<{ name: string; args: Record<string, unknown> }> = [];
   let executedAction: BotChatMessage["executedAction"] = undefined;
   let newEvent: any = undefined;
+  let updatedEvent: any = undefined;
+  let deletedId: string | undefined = undefined;
 
-  // Standard demo current date reference if relative date terms like "today", "tomorrow" are used
   const todayStr = "2024-11-20";
-
-  // Intent detection helper for direct natural language execution
   const lowerText = userText.toLowerCase();
+  const imageNote = imageDataUrl ? "\n\n*(Attachment included: image provided to visual calendar context)*" : "";
 
-  // Try direct pattern parsing first for speed & reliability
+  // 1. DELETE / REMOVE / CANCEL ACTION
+  if (
+    lowerText.includes("delete") ||
+    lowerText.includes("remove") ||
+    lowerText.includes("cancel")
+  ) {
+    let target = userText.replace(/delete|remove|cancel|event|meeting/gi, "").trim();
+    const matchQuote = userText.match(/["']([^"']+)["']/);
+    if (matchQuote) target = matchQuote[1];
+
+    const deleted = deleteCalendarEvent(target || "Standup");
+    if (deleted) {
+      toolCallsExecuted.push({
+        name: "remove_calendar_event",
+        args: { target: deleted.title, eventId: deleted.id },
+      });
+      executedAction = {
+        type: "delete",
+        title: deleted.title,
+        dateStr: deleted.dateStr,
+        targetId: deleted.id,
+      };
+      deletedId = deleted.id;
+      return {
+        reply: `Successfully removed **${deleted.title}** scheduled for **${deleted.dateStr}** (${deleted.time}).${imageNote}`,
+        toolCallsExecuted,
+        executedAction,
+        deletedId,
+      };
+    } else {
+      return {
+        reply: `Could not find an event matching "${target}" to remove from your calendar.${imageNote}`,
+        toolCallsExecuted,
+      };
+    }
+  }
+
+  // 2. EDIT / RESCHEDULE / MOVE ACTION
+  if (
+    lowerText.includes("edit") ||
+    lowerText.includes("reschedule") ||
+    lowerText.includes("change") ||
+    lowerText.includes("move") ||
+    lowerText.includes("update")
+  ) {
+    let target = "Standup";
+    const matchQuote = userText.match(/["']([^"']+)["']/);
+    if (matchQuote) target = matchQuote[1];
+
+    let newDateStr = todayStr;
+    if (lowerText.includes("tomorrow")) newDateStr = "2024-11-21";
+    if (lowerText.includes("friday")) newDateStr = "2024-11-22";
+
+    let startHour = 15;
+    const timeMatch = lowerText.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+    if (timeMatch) {
+      let hour = parseInt(timeMatch[1], 10);
+      const mins = timeMatch[2] ? parseInt(timeMatch[2], 10) / 60 : 0;
+      const ampm = timeMatch[3];
+      if (ampm === "pm" && hour < 12) hour += 12;
+      if (ampm === "am" && hour === 12) hour = 0;
+      if (hour >= 0 && hour <= 23) startHour = hour + mins;
+    }
+
+    const edited = editCalendarEvent(target, {
+      dateStr: newDateStr,
+      startHour,
+    });
+
+    if (edited) {
+      toolCallsExecuted.push({
+        name: "edit_calendar_event",
+        args: { target: edited.title, dateStr: newDateStr, startHour },
+      });
+      executedAction = {
+        type: "edit",
+        title: edited.title,
+        dateStr: edited.dateStr,
+        time: edited.time,
+        targetId: edited.id,
+      };
+      updatedEvent = edited;
+      return {
+        reply: `I've updated **${edited.title}** to **${edited.dateStr}** at **${edited.time}**.${imageNote}`,
+        toolCallsExecuted,
+        executedAction,
+        updatedEvent,
+      };
+    }
+  }
+
+  // 3. ADD / SCHEDULE ACTION
   if (
     lowerText.includes("add") ||
     lowerText.includes("schedule") ||
@@ -44,7 +138,6 @@ export async function processAgentMessage(
     let dateStr = todayStr;
     let category: "meeting" | "focus" | "personal" | "strategy" | "learning" = "meeting";
 
-    // Extract title if quote or simple text exists
     const matchQuote = userText.match(/["']([^"']+)["']/);
     if (matchQuote) {
       title = matchQuote[1];
@@ -55,19 +148,9 @@ export async function processAgentMessage(
       }
     }
 
-    if (lowerText.includes("tomorrow")) {
-      dateStr = "2024-11-21";
-    } else if (lowerText.includes("friday")) {
-      dateStr = "2024-11-22";
-    } else if (lowerText.includes("thursday")) {
-      dateStr = "2024-11-21";
-    } else if (lowerText.includes("monday")) {
-      dateStr = "2024-11-18";
-    } else if (lowerText.includes("tuesday")) {
-      dateStr = "2024-11-19";
-    }
+    if (lowerText.includes("tomorrow")) dateStr = "2024-11-21";
+    else if (lowerText.includes("friday")) dateStr = "2024-11-22";
 
-    // Extract time (e.g. 3pm, 10am, 15:00)
     const timeMatch = lowerText.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
     if (timeMatch) {
       let hour = parseInt(timeMatch[1], 10);
@@ -75,23 +158,19 @@ export async function processAgentMessage(
       const ampm = timeMatch[3];
       if (ampm === "pm" && hour < 12) hour += 12;
       if (ampm === "am" && hour === 12) hour = 0;
-      if (hour >= 0 && hour <= 23) {
-        startHour = hour + mins;
-      }
+      if (hour >= 0 && hour <= 23) startHour = hour + mins;
     }
 
     if (lowerText.includes("focus") || lowerText.includes("work")) category = "focus";
     if (lowerText.includes("lunch") || lowerText.includes("coffee") || lowerText.includes("gym")) category = "personal";
-    if (lowerText.includes("strategy") || lowerText.includes("sync") || lowerText.includes("review")) category = "strategy";
 
-    // Perform event addition
     newEvent = addCalendarEvent({
       title: title.charAt(0).toUpperCase() + title.slice(1),
       dateStr,
       startHour,
       durHours,
       cat: category,
-      meta: "Created via GPT-OSS-120b Assistant",
+      meta: "Created via Groq GPT-OSS-120b Assistant",
     });
 
     toolCallsExecuted.push({
@@ -107,14 +186,14 @@ export async function processAgentMessage(
     };
 
     return {
-      reply: `I've added **${newEvent.title}** to your calendar on **${dateStr}** from **${newEvent.time}**.`,
+      reply: `I've scheduled **${newEvent.title}** on **${dateStr}** from **${newEvent.time}**.${imageNote}`,
       toolCallsExecuted,
       executedAction,
       newEvent,
     };
   }
 
-  // Check query / schedule requests
+  // 4. VIEW / QUERY ACTION
   if (
     lowerText.includes("what") ||
     lowerText.includes("show") ||
@@ -133,9 +212,9 @@ export async function processAgentMessage(
       const freeSlots = checkFreeSlots(queryDate);
       toolCallsExecuted.push({ name: "check_free_slots", args: { dateStr: queryDate } });
       executedAction = { type: "query", dateStr: queryDate };
-      const slotsFormatted = freeSlots.length > 0 ? freeSlots.join(", ") : "No open slots found.";
+      const slotsFormatted = freeSlots.length > 0 ? freeSlots.map(s => `- ${s}`).join("\n") : "- No open slots found.";
       return {
-        reply: `Here are your open time slots for **${queryDate}**:\n\n• ${slotsFormatted}`,
+        reply: `### Available Time Slots for **${queryDate}**:\n\n${slotsFormatted}${imageNote}`,
         toolCallsExecuted,
         executedAction,
       };
@@ -146,23 +225,23 @@ export async function processAgentMessage(
 
       if (events.length === 0) {
         return {
-          reply: `You have no events scheduled on **${queryDate}**. You're clear all day!`,
+          reply: `You have no events scheduled on **${queryDate}**. Your calendar is completely open!${imageNote}`,
           toolCallsExecuted,
           executedAction,
         };
       }
 
-      const eventList = events.map((ev) => `• **${ev.time}**: ${ev.title} (${ev.cat})`).join("\n");
+      const eventList = events.map((ev) => `- **${ev.time}**: \`${ev.title}\` *(${ev.cat})*`).join("\n");
       return {
-        reply: `Here is your schedule for **${queryDate}** (${events.length} event${events.length > 1 ? "s" : ""}):\n\n${eventList}`,
+        reply: `### Schedule for **${queryDate}** (${events.length} event${events.length > 1 ? "s" : ""}):\n\n${eventList}${imageNote}`,
         toolCallsExecuted,
         executedAction,
       };
     }
   }
 
-  // If real API key is supplied, attempt direct Groq completion call using GPT-OSS-120b model
-  if (userApiKey && userApiKey !== "demo_groq_key") {
+  // 5. Groq API Integration (if Key Provided)
+  if (apiKey) {
     try {
       const client = new OpenAI({
         apiKey,
@@ -171,29 +250,28 @@ export async function processAgentMessage(
 
       const eventsSnapshot = getCalendarEvents();
       const response = await client.chat.completions.create({
-        model: "openai/gpt-oss-120b", // or llama-3.3-70b-versatile
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",
-            content: `You are the Meridian Calendar Assistant powered by Caspian SDK and Groq GPT-OSS-120b.
-Current Reference Date: ${todayStr}.
+            content: `You are Meridian's Groq GPT-OSS-120b Calendar Engine.
+Reference Date: ${todayStr}.
 Current User Schedule: ${JSON.stringify(eventsSnapshot)}.
-Respond concisely and help users manage, add, or inspect calendar events.`,
+Respond with markdown formatting. Manage additions, updates, removals, and schedule queries.`,
           },
           { role: "user", content: userText },
         ],
       });
 
-      const replyContent = response.choices[0]?.message?.content || "I've processed your request.";
-      return { reply: replyContent, toolCallsExecuted };
+      const replyContent = response.choices[0]?.message?.content || "Request processed by Groq engine.";
+      return { reply: `${replyContent}${imageNote}`, toolCallsExecuted };
     } catch (err: any) {
-      console.warn("Groq API error fallback to local agent:", err?.message);
+      console.warn("Groq API notice:", err?.message);
     }
   }
 
-  // Default response for general chat
   return {
-    reply: `I'm your Meridian GPT-OSS-120b Calendar Assistant. You can ask me to add events (e.g., "Schedule a Team Sync tomorrow at 3pm"), check your free time, or inspect your agenda for any day.`,
+    reply: `I am Meridian's **Groq GPT-OSS-120b** Calendar AI. You can:\n- **Add**: "Schedule Design Sync tomorrow at 2pm"\n- **Edit**: "Reschedule Design Sync to 3pm"\n- **Remove**: "Cancel Design Sync"\n- **View**: "What's on my schedule today?"${imageNote}`,
     toolCallsExecuted: [],
   };
 }

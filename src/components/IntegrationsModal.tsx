@@ -19,7 +19,7 @@ export const IntegrationsModal: React.FC = () => {
       connected: false,
       active: false,
       statusText: "Ready to connect",
-      description: "Talk to @BotFather to get a bot token. Your Caspian agent handles scheduling DMs.",
+      description: "Ask your Telegram bot to schedule, edit, remove, & query events.",
     },
     {
       id: "email",
@@ -37,7 +37,7 @@ export const IntegrationsModal: React.FC = () => {
       connected: false,
       active: false,
       statusText: "Roadmap: Phase 2",
-      description: "Slash commands & direct DMs with your workspace calendar assistant.",
+      description: "Slash commands & direct DMs with your workspace Groq calendar assistant.",
     },
     {
       id: "discord",
@@ -50,6 +50,7 @@ export const IntegrationsModal: React.FC = () => {
     },
   ]);
   const [isSaving, setIsSaving] = useState(false);
+  const [keyError, setKeyError] = useState(false);
 
   useEffect(() => {
     if (isIntegrationsOpen) {
@@ -74,6 +75,14 @@ export const IntegrationsModal: React.FC = () => {
 
   const handleConnectTelegram = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!groqKey || groqKey.trim().length === 0) {
+      setKeyError(true);
+      showToast("❌ Groq API Key is REQUIRED for all AI Integrations!");
+      return;
+    }
+
+    setKeyError(false);
     setIsSaving(true);
 
     try {
@@ -90,13 +99,13 @@ export const IntegrationsModal: React.FC = () => {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        showToast(data.message || "Telegram Bot connected via Caspian SDK!");
+        showToast(data.message || "Integrations saved with Groq GPT-OSS-120b!");
         if (data.status) setChannels(data.status);
       } else {
-        showToast(data.error || data.message || "Failed to connect Telegram Bot");
+        showToast(data.error || data.message || "Failed to update integration");
       }
     } catch {
-      showToast("Telegram integration saved locally via Caspian Gateway");
+      showToast("Integrations saved locally with Groq API Key");
     } finally {
       setIsSaving(false);
     }
@@ -136,12 +145,48 @@ export const IntegrationsModal: React.FC = () => {
               ⚡ App & Bot Integrations
             </h2>
             <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
-              Powered by <strong>Caspian SDK</strong> & <strong>Groq GPT-OSS-120b</strong>
+              Powered by <strong>Groq GPT-OSS-120b</strong> across all channels (Telegram, Email, Slack, Discord & Web)
             </p>
           </div>
           <button className="modal-close" onClick={closeIntegrations}>
             ✕
           </button>
+        </div>
+
+        {/* Global Groq API Key Requirement Card */}
+        <div
+          style={{
+            background: keyError ? "rgba(239, 68, 68, 0.15)" : "rgba(245, 158, 11, 0.12)",
+            border: `1px solid ${keyError ? "rgba(239, 68, 68, 0.5)" : "rgba(245, 158, 11, 0.4)"}`,
+            borderRadius: "8px",
+            padding: "14px 16px",
+            marginBottom: "20px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+            <div style={{ fontWeight: 600, fontSize: "13px", color: "var(--text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
+              🔑 Groq API Key <span style={{ fontSize: "10px", background: "#ef4444", color: "#fff", padding: "1px 6px", borderRadius: "10px", fontWeight: 700 }}>REQUIRED</span>
+            </div>
+            <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Model: GPT-OSS-120b</span>
+          </div>
+          <p style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "8px", lineHeight: "1.4" }}>
+            A Groq API key is required to power natural language event creation, editing, deletion, and calendar queries across <strong>all</strong> integrations.
+          </p>
+          <input
+            type="password"
+            className="form-input"
+            style={{
+              fontFamily: "JetBrains Mono, monospace",
+              fontSize: "12px",
+              borderColor: keyError ? "#ef4444" : "var(--border)",
+            }}
+            placeholder="gsk_... (Required Groq API Key)"
+            value={groqKey}
+            onChange={(e) => {
+              setGroqKey(e.target.value);
+              if (e.target.value.trim().length > 0) setKeyError(false);
+            }}
+          />
         </div>
 
         {/* Channels List */}
@@ -199,20 +244,6 @@ export const IntegrationsModal: React.FC = () => {
                     />
                   </div>
 
-                  <div className="form-group" style={{ marginBottom: "12px" }}>
-                    <label className="form-label" style={{ fontSize: "11px" }}>
-                      Groq API Key (Optional for GPT-OSS-120b)
-                    </label>
-                    <input
-                      type="password"
-                      className="form-input"
-                      style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "12px" }}
-                      placeholder="gsk_..."
-                      value={groqKey}
-                      onChange={(e) => setGroqKey(e.target.value)}
-                    />
-                  </div>
-
                   <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
                     {telegramChannel?.connected && (
                       <button
@@ -225,7 +256,7 @@ export const IntegrationsModal: React.FC = () => {
                       </button>
                     )}
                     <button type="submit" className="btn-submit" disabled={isSaving}>
-                      {isSaving ? "Saving..." : telegramChannel?.connected ? "Update Token" : "Connect Telegram"}
+                      {isSaving ? "Saving..." : telegramChannel?.connected ? "Update Integration" : "Save & Connect"}
                     </button>
                   </div>
                 </form>
@@ -249,7 +280,7 @@ export const IntegrationsModal: React.FC = () => {
           <div>
             <div style={{ fontWeight: 600, fontSize: "13px" }}>🤖 Try Web Assistant Drawer</div>
             <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-              Test your Caspian GPT-OSS-120b Bot directly inside Meridian web app.
+              Full CRUD calendar assistant with image drag & drop support.
             </div>
           </div>
           <button

@@ -24,15 +24,17 @@ export interface BotChatMessage {
   content: string;
   timestamp: string;
   channel?: IntegrationChannel | "web";
+  image?: string; // Data URL for attached image
   toolCalls?: Array<{
     name: string;
     args: Record<string, unknown>;
   }>;
   executedAction?: {
-    type: "add" | "delete" | "query";
+    type: "add" | "edit" | "delete" | "query";
     title?: string;
     dateStr?: string;
     time?: string;
+    targetId?: string;
   };
 }
 

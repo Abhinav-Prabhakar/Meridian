@@ -91,6 +91,37 @@ export function deleteCalendarEvent(target: string): CalendarStoreEvent | null {
   return null;
 }
 
+export function editCalendarEvent(
+  target: string,
+  updates: Partial<Omit<CalendarStoreEvent, "id">> & { newTitle?: string; startHour?: number; durHours?: number }
+): CalendarStoreEvent | null {
+  const idx = globalEvents.findIndex(
+    (ev) => ev.id === target || ev.title.toLowerCase().includes(target.toLowerCase())
+  );
+
+  if (idx === -1) return null;
+
+  const current = globalEvents[idx];
+  const newTitle = updates.newTitle || updates.title || current.title;
+  const startHour = updates.startHour !== undefined ? updates.startHour : current.start;
+  const durHours = updates.durHours !== undefined ? updates.durHours : current.dur;
+  const time = formatTimeRange(startHour, durHours);
+
+  const updatedEvent: CalendarStoreEvent = {
+    ...current,
+    title: newTitle,
+    dateStr: updates.dateStr || current.dateStr,
+    start: startHour,
+    dur: durHours,
+    cat: updates.cat || current.cat,
+    time,
+    meta: updates.meta || current.meta,
+  };
+
+  globalEvents[idx] = updatedEvent;
+  return updatedEvent;
+}
+
 export function checkFreeSlots(dateStr: string): string[] {
   const dayEvents = getCalendarEvents(dateStr);
   const workingHoursStart = 8;
