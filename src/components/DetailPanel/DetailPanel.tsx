@@ -233,7 +233,7 @@ export const DetailPanel: React.FC = () => {
               onClick={() => openEventDetails(ev)}
             >
               <div className="upcoming-time">
-                {ev.time.split(" — ")[0]}
+                {ev.allDay ? "All day" : ev.time.split(" — ")[0]}
                 <span className="day">{dayLabel}</span>
               </div>
               <div className="upcoming-info">

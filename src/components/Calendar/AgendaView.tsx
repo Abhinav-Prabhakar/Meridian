@@ -130,7 +130,7 @@ export const AgendaView: React.FC = () => {
                             minWidth: "100px",
                           }}
                         >
-                          {ev.time}
+                          {ev.allDay ? "All day" : ev.time}
                         </div>
                         <div>
                           <div

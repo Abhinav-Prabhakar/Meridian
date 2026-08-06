@@ -4,6 +4,7 @@ import React from "react";
 import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
 import { useCalendarFilter } from "@/context/CalendarFilterContext";
 import { formatDateStr } from "@/lib/dateUtils";
+import { TimeZoneLabel } from "./TimeZoneLabel";
 
 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -99,7 +100,7 @@ export const MonthView: React.FC = () => {
   return (
     <div className="calendar-area fade-up fade-up-2">
       <div className="week-header">
-        <div className="time-corner">GMT-8</div>
+        <TimeZoneLabel />
         {dayNames.map((d) => (
           <div key={d} className="day-header">
             <div className="day-name">{d}</div>
@@ -183,7 +184,7 @@ export const MonthView: React.FC = () => {
                         opacity: isVisible ? 1 : 0.2,
                         borderRadius: "2px",
                       }}
-                      title={`${ev.time} - ${ev.title}`}
+                      title={`${ev.allDay ? "All day" : ev.time} - ${ev.title}`}
                       onClick={(e) => handlePillClick(e, ev)}
                     >
                       {ev.title}

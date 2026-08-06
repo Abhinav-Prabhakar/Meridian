@@ -33,20 +33,23 @@ export function addCalendarEvent(data: {
   dateStr: string;
   startHour: number;
   durHours?: number;
+  allDay?: boolean;
   cat?: CalendarStoreEvent["cat"];
   meta?: string;
   attendees?: string[];
 }): CalendarStoreEvent {
   const dur = data.durHours ?? 1;
-  const time = formatTimeRange(data.startHour, dur);
+  const allDay = data.allDay === true;
+  const time = allDay ? "All day" : formatTimeRange(data.startHour, dur);
   const newEvent: CalendarStoreEvent = {
     id: Date.now().toString(),
     dateStr: data.dateStr,
     start: data.startHour,
-    dur,
+    dur: allDay ? 24 : dur,
     title: data.title,
     cat: data.cat || "meeting",
     time,
+    allDay,
     meta: data.meta || "Added via Caspian Bot",
     attendees: data.attendees || ["Bot", "You"],
   };
@@ -80,7 +83,7 @@ export function editCalendarEvent(
   const newTitle = updates.newTitle || updates.title || current.title;
   const startHour = updates.startHour !== undefined ? updates.startHour : current.start;
   const durHours = updates.durHours !== undefined ? updates.durHours : current.dur;
-  const time = formatTimeRange(startHour, durHours);
+  const time = current.allDay ? "All day" : formatTimeRange(startHour, durHours);
 
   const updatedEvent: CalendarStoreEvent = {
     ...current,
@@ -99,8 +102,8 @@ export function editCalendarEvent(
 
 export function checkFreeSlots(dateStr: string): string[] {
   const dayEvents = getCalendarEvents(dateStr);
-  const workingHoursStart = 8;
-  const workingHoursEnd = 18;
+  const workingHoursStart = 0;
+  const workingHoursEnd = 24;
   const freeSlots: string[] = [];
 
   let current = workingHoursStart;

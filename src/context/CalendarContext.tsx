@@ -12,6 +12,7 @@ export interface CalendarEvent {
   title: string;
   cat: CalendarCategory;
   time: string; // formatted time string e.g. "09:00 — 10:00"
+  allDay: boolean;
   meta?: string;
   attendees?: string[];
 }
@@ -24,6 +25,7 @@ type EventRow = {
   title: string;
   category: string;
   time_str: string;
+  all_day: boolean | null;
   meta: string | null;
   attendees: string[] | null;
 };
@@ -37,6 +39,7 @@ function fromDatabaseEvent(row: EventRow): CalendarEvent {
     title: row.title,
     cat: row.category,
     time: row.time_str,
+    allDay: Boolean(row.all_day),
     meta: row.meta || undefined,
     attendees: row.attendees || undefined,
   };
@@ -60,6 +63,7 @@ export interface NewEventInitialData {
   title?: string;
   cat?: CalendarCategory;
   meta?: string;
+  allDay?: boolean;
 }
 
 interface CalendarContextType {
@@ -110,12 +114,6 @@ interface CalendarContextType {
   closeMobileSidebar: () => void;
 }
 
-const seedNotifications: NotificationItem[] = [
-  { id: "n1", title: "Architecture Review starting in 18 minutes", time: "14:42", read: false, type: "upcoming" },
-  { id: "n2", title: "Marcus marked OOO (AM) for Nov 19", time: "09:15", read: false, type: "reminder" },
-  { id: "n3", title: "Company Off-site scheduled for Friday", time: "Yesterday", read: true, type: "system" },
-];
-
 const INITIAL_DATE = new Date();
 INITIAL_DATE.setHours(0, 0, 0, 0);
 const CalendarContext = createContext<CalendarContextType>({
@@ -139,7 +137,7 @@ const CalendarContext = createContext<CalendarContextType>({
   isSearchOpen: false,
   openSearch: () => {},
   closeSearch: () => {},
-  notifications: seedNotifications,
+  notifications: [],
   isNotificationsOpen: false,
   openNotifications: () => {},
   closeNotifications: () => {},
@@ -177,7 +175,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [newEventInitialData, setNewEventInitialData] = useState<NewEventInitialData | null>(null);
   const [viewingEvent, setViewingEvent] = useState<CalendarEvent | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(seedNotifications);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
   const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
@@ -247,6 +245,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         title: newEvent.title,
         category: newEvent.cat,
         time_str: newEvent.time,
+        all_day: newEvent.allDay,
         meta: newEvent.meta,
         attendees: newEvent.attendees,
       })
@@ -273,6 +272,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         title: updated.title,
         category: updated.cat,
         time_str: updated.time,
+        all_day: updated.allDay,
         meta: updated.meta,
         attendees: updated.attendees,
       })

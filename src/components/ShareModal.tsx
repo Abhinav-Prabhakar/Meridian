@@ -26,6 +26,18 @@ export const ShareModal: React.FC = () => {
     let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Meridian Calendar OS//EN\r\n";
     events.forEach((ev) => {
       const dateParts = ev.dateStr.replace(/-/g, "");
+      if (ev.allDay) {
+        const date = new Date(`${ev.dateStr}T00:00:00`);
+        date.setDate(date.getDate() + 1);
+        const nextDate = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+        icsContent += "BEGIN:VEVENT\r\n";
+        icsContent += `SUMMARY:${ev.title}\r\n`;
+        icsContent += `DTSTART;VALUE=DATE:${dateParts}\r\n`;
+        icsContent += `DTEND;VALUE=DATE:${nextDate}\r\n`;
+        if (ev.meta) icsContent += `LOCATION:${ev.meta}\r\n`;
+        icsContent += "END:VEVENT\r\n";
+        return;
+      }
       const startH = Math.floor(ev.start);
       const startM = ev.start % 1 === 0.5 ? "30" : "00";
       const endH = Math.floor(ev.start + ev.dur);

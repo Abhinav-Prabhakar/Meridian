@@ -4,12 +4,15 @@ import React, { useEffect, useRef, useState } from "react";
 import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
 import { useCalendarFilter } from "@/context/CalendarFilterContext";
 import { useToast } from "@/context/ToastContext";
-import { formatDateStr, getNowPosition } from "@/lib/dateUtils";
+import {
+  CALENDAR_MINUTES,
+  CALENDAR_START_HOUR,
+  formatDateStr,
+  getCalendarHourLabels,
+  getNowPosition,
+} from "@/lib/dateUtils";
 
-const hours = [
-  "7 AM", "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
-  "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM", "7 PM", "8 PM"
-];
+const hours = getCalendarHourLabels();
 
 const dayAbbrs = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -77,7 +80,7 @@ export const WeekBody: React.FC = () => {
   };
 
   const handleSlotClick = (dateStr: string, hourIndex: number) => {
-    const startHour = 7 + hourIndex;
+    const startHour = CALENDAR_START_HOUR + hourIndex;
     openNewEventModal({ dateStr, startHour });
   };
 
@@ -164,7 +167,7 @@ export const WeekBody: React.FC = () => {
       const columnRect = targetColumn.getBoundingClientRect();
       const durationMinutes = ev.dur * 60;
       const pointerOffsetMinutes = moveEvent.clientY - columnRect.top - session.grabOffsetY;
-      const maxStartMinutes = 14 * 60 - durationMinutes;
+      const maxStartMinutes = CALENDAR_MINUTES - durationMinutes;
       const snappedMinutes = Math.max(
         0,
         Math.min(maxStartMinutes, Math.round(pointerOffsetMinutes / 10) * 10)
@@ -173,7 +176,7 @@ export const WeekBody: React.FC = () => {
       schedulePreview({
         id: ev.id,
         dateStr: targetColumn.dataset.date,
-        start: 7 + snappedMinutes / 60,
+        start: CALENDAR_START_HOUR + snappedMinutes / 60,
       });
     };
 
@@ -243,7 +246,7 @@ export const WeekBody: React.FC = () => {
         const dateStr = formatDateStr(columnDate);
         const isToday = dateStr === todayStr;
         const dayEvents = events.filter((event) =>
-          dragPreview?.id === event.id ? dragPreview.dateStr === dateStr : event.dateStr === dateStr
+          !event.allDay && (dragPreview?.id === event.id ? dragPreview.dateStr === dateStr : event.dateStr === dateStr)
         );
 
         return (
@@ -266,7 +269,7 @@ export const WeekBody: React.FC = () => {
             {dayEvents.map((ev) => {
               const isDragging = dragPreview?.id === ev.id;
               const eventStart = isDragging ? dragPreview.start : ev.start;
-              const top = (eventStart - 7) * 60;
+              const top = (eventStart - CALENDAR_START_HOUR) * 60;
               const height = ev.dur * 60 - 3;
               const compact = ev.dur <= 0.5;
               const isVisible = activeCategories[ev.cat] !== false;

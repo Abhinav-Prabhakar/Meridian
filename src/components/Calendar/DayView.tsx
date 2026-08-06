@@ -4,12 +4,17 @@ import React, { useEffect, useState } from "react";
 import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
 import { useCalendarFilter } from "@/context/CalendarFilterContext";
 import { useToast } from "@/context/ToastContext";
-import { formatDateStr, getNowPosition } from "@/lib/dateUtils";
+import {
+  CALENDAR_MINUTES,
+  CALENDAR_START_HOUR,
+  formatDateStr,
+  getCalendarHourLabels,
+  getNowPosition,
+} from "@/lib/dateUtils";
+import { TimeZoneLabel } from "./TimeZoneLabel";
+import { AllDayRow } from "./AllDayRow";
 
-const hours = [
-  "7 AM", "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
-  "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM", "7 PM", "8 PM"
-];
+const hours = getCalendarHourLabels();
 
 function formatHourMin(hourVal: number): string {
   const h = Math.floor(hourVal);
@@ -27,7 +32,7 @@ export const DayView: React.FC = () => {
   const { showToast } = useToast();
 
   const dateStr = formatDateStr(selectedDate);
-  const dayEvents = events.filter((e) => e.dateStr === dateStr);
+  const dayEvents = events.filter((e) => e.dateStr === dateStr && !e.allDay);
 
   const fullDateTitle = selectedDate.toLocaleDateString("en-US", {
     weekday: "long",
@@ -52,7 +57,7 @@ export const DayView: React.FC = () => {
   };
 
   const handleSlotClick = (hIdx: number) => {
-    openNewEventModal({ dateStr, startHour: 7 + hIdx });
+    openNewEventModal({ dateStr, startHour: CALENDAR_START_HOUR + hIdx });
   };
 
   // Drag and drop with 10-minute snapping
@@ -74,8 +79,9 @@ export const DayView: React.FC = () => {
 
     const columnRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const offsetY = e.clientY - columnRect.top;
-    const snappedMinutes = Math.max(0, Math.min(13.83 * 60, Math.round(offsetY / 10) * 10));
-    const newStart = 7 + snappedMinutes / 60;
+    const maxStartMinutes = CALENDAR_MINUTES - targetEvent.dur * 60;
+    const snappedMinutes = Math.max(0, Math.min(maxStartMinutes, Math.round(offsetY / 10) * 10));
+    const newStart = CALENDAR_START_HOUR + snappedMinutes / 60;
     const newTimeStr = buildTimeRangeStr(newStart, targetEvent.dur);
 
     updateEvent(eventId, {
@@ -120,6 +126,7 @@ export const DayView: React.FC = () => {
 
   return (
     <div className="calendar-area fade-up fade-up-2">
+      <AllDayRow singleDay />
       <div
         className="week-header"
         style={{
@@ -128,7 +135,7 @@ export const DayView: React.FC = () => {
           alignItems: "center",
         }}
       >
-        <div className="time-corner">GMT-8</div>
+        <TimeZoneLabel />
         <div style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: "16px", fontWeight: 700 }}>
           {fullDateTitle}
         </div>
@@ -160,7 +167,7 @@ export const DayView: React.FC = () => {
           ))}
 
           {dayEvents.map((ev) => {
-            const top = (ev.start - 7) * 60;
+            const top = (ev.start - CALENDAR_START_HOUR) * 60;
             const height = ev.dur * 60 - 3;
             const compact = ev.dur <= 0.5;
             const isVisible = activeCategories[ev.cat] !== false;

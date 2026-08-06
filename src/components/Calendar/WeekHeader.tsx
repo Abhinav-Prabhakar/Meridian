@@ -3,6 +3,7 @@
 import React from "react";
 import { useCalendar } from "@/context/CalendarContext";
 import { formatDateStr } from "@/lib/dateUtils";
+import { TimeZoneLabel } from "./TimeZoneLabel";
 
 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -31,7 +32,7 @@ export const WeekHeader: React.FC = () => {
 
   return (
     <div className="week-header">
-      <div className="time-corner">GMT-8</div>
+      <TimeZoneLabel />
       {days.map((d, i) => (
         <div
           key={i}

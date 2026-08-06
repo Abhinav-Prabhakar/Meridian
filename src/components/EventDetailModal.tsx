@@ -39,6 +39,7 @@ export const EventDetailModal: React.FC = () => {
       dateStr: evToEdit.dateStr,
       startHour: evToEdit.start,
       dur: evToEdit.dur,
+      allDay: evToEdit.allDay,
       title: evToEdit.title,
       cat: evToEdit.cat,
       meta: evToEdit.meta,
@@ -98,7 +99,7 @@ export const EventDetailModal: React.FC = () => {
             {viewingEvent.title}
           </h2>
           <div className="next-event-time" style={{ fontSize: "14px" }}>
-            {viewingEvent.time} <span className="duration">· {Math.round(viewingEvent.dur * 60)}m</span>
+            {viewingEvent.allDay ? "All day" : <>{viewingEvent.time} <span className="duration">· {Math.round(viewingEvent.dur * 60)}m</span></>}
           </div>
           <div style={{ fontSize: "11px", color: "var(--fg-3)", fontFamily: "JetBrains Mono, monospace" }}>
             Date: {viewingEvent.dateStr}

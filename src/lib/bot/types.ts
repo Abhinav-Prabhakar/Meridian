@@ -50,6 +50,7 @@ export interface CalendarStoreEvent {
   title: string;
   cat: "meeting" | "focus" | "personal" | "strategy" | "learning";
   time: string;
+  allDay: boolean;
   meta?: string;
   attendees?: string[];
 }

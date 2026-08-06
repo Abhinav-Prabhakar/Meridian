@@ -129,7 +129,7 @@ export const SearchModal: React.FC = () => {
                       fontFamily: "JetBrains Mono, monospace",
                     }}
                   >
-                    {ev.dateStr} · {ev.time} {ev.meta ? `· ${ev.meta}` : ""}
+                    {ev.dateStr} · {ev.allDay ? "All day" : ev.time} {ev.meta ? `· ${ev.meta}` : ""}
                   </div>
                 </div>
                 <span

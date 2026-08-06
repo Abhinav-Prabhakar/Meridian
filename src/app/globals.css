@@ -427,8 +427,9 @@ body {
   display: grid;
   grid-template-columns: 64px repeat(7, 1fr);
   border-bottom: 1px solid var(--border);
-  height: 36px;
+  min-height: 36px;
 }
+.allday-row-single { grid-template-columns: 64px 1fr; }
 .allday-label {
   border-right: 1px solid var(--border);
   padding: 8px; font-size: 9px;
@@ -443,6 +444,8 @@ body {
 }
 .allday-cell:last-child { border-right: none; }
 .allday-event {
+  display: block; width: 100%; text-align: left;
+  border-top: none; border-right: none; border-bottom: none;
   background: var(--orange-dim);
   border-left: 2px solid var(--orange);
   padding: 3px 8px;
@@ -922,6 +925,12 @@ body {
 .modal-form { display: flex; flex-direction: column; gap: 16px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-checkbox-row {
+  display: flex; align-items: center; gap: 8px;
+  margin: 12px 0; color: var(--fg-2); font-size: 12px;
+  cursor: pointer;
+}
+.form-checkbox-row input { accent-color: var(--accent); }
 .form-label {
   font-size: 10px; text-transform: uppercase;
   letter-spacing: 0.12em; color: var(--fg-3); font-weight: 600;
@@ -1762,7 +1771,7 @@ body {
     -webkit-overflow-scrolling: touch !important;
   }
   .week-header,
-  .all-day-row,
+  .allday-row,
   .week-body {
     min-width: 720px !important;
   }
@@ -1793,4 +1802,3 @@ body {
   .month-title { font-size: 14px !important; }
   .week-range { font-size: 10px !important; }
 }
-

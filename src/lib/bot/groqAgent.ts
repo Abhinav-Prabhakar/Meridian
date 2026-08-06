@@ -46,6 +46,7 @@ function executeTool(
         dateStr: String(args.dateStr || todayStr),
         startHour: Number(args.startHour) || 14,
         durHours: args.durHours != null ? Number(args.durHours) : 1,
+        allDay: args.allDay === true,
         cat: args.cat as CalendarStoreEvent["cat"],
         meta: args.meta ? String(args.meta) : "Created via Meridian AI Assistant",
       });
@@ -162,6 +163,7 @@ const CALENDAR_TOOLS = [
             description: "Event category",
           },
           meta: { type: "string", description: "Optional metadata / notes" },
+          allDay: { type: "boolean", description: "Whether this is an all-day event" },
         },
         required: ["title", "dateStr", "startHour"],
       },

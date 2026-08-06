@@ -128,6 +128,7 @@ export const BotChatDrawer: React.FC = () => {
             title: data.newEvent.title,
             cat: data.newEvent.cat,
             time: data.newEvent.time,
+            allDay: data.newEvent.allDay,
             meta: data.newEvent.meta,
             attendees: data.newEvent.attendees,
           });
@@ -140,6 +141,7 @@ export const BotChatDrawer: React.FC = () => {
             title: data.updatedEvent.title,
             cat: data.updatedEvent.cat,
             time: data.updatedEvent.time,
+            allDay: data.updatedEvent.allDay,
             meta: data.updatedEvent.meta,
             attendees: data.updatedEvent.attendees,
           });
@@ -160,8 +162,8 @@ export const BotChatDrawer: React.FC = () => {
 
   const suggestedPrompts = [
     "Schedule Team Sync tomorrow at 4pm",
-    "Reschedule Daily Standup to 11:30am",
-    "Remove Daily Standup",
+    "Find my next open hour",
+    "Show this week's events",
     "What's on my schedule today?",
   ];
 
