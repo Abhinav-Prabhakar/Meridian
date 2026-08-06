@@ -15,39 +15,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Live Clock & Mini Calendar State
-  const [liveTime, setLiveTime] = useState("");
-  const [liveDate, setLiveDate] = useState("");
-  const [secProgress, setSecProgress] = useState(0);
-
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
     }, 2800);
   };
-
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, "0");
-      const m = String(now.getMinutes()).padStart(2, "0");
-      const s = String(now.getSeconds()).padStart(2, "0");
-      setLiveTime(`${h}:${m}:${s}`);
-
-      const dateStr = now.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "short",
-        day: "numeric",
-      });
-      setLiveDate(dateStr);
-      setSecProgress(((now.getSeconds() + 1) / 60) * 100);
-    };
-
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Check existing session
   useEffect(() => {
@@ -135,137 +108,11 @@ export default function LoginPage() {
       <div className="auth-shell">
         {/* LEFT VISUAL PANEL */}
         <aside className="auth-visual">
-          <header className="auth-brand fade-up">
-            <div className="brand-mark"></div>
-            <div className="brand-text">
-              <div className="brand-name">MERIDIAN</div>
-              <div className="brand-sub">calendar os</div>
-            </div>
-            <div className="version-tag">v 2.4.1</div>
-          </header>
-
-          <div className="visual-hero fade-up fade-up-1">
-            <div className="hero-badge">
-              <span className="dot"></span>
-              NOW IN BETA · EARLY ACCESS
-            </div>
-            <h1 className="hero-title">
-              Your time,<br />
-              <span className="hero-accent">orchestrated.</span>
-            </h1>
-            <p className="hero-desc">
-              The calendar built for people who plan at scale. Sync across teams, protect focus time, and ship the work that actually matters.
-            </p>
-          </div>
-
-          <div className="preview-card fade-up fade-up-2">
-            <div className="preview-header">
-              <div>
-                <div className="preview-label">
-                  <span className="dot"></span>
-                  LIVE · LOCAL TIME
-                </div>
-                <div className="preview-time">{liveTime || "09:41:00"}</div>
-                <div className="preview-date">{liveDate || "Wednesday, Nov 20"}</div>
-              </div>
-              <div className="preview-cal">
-                <div className="preview-cal-title">NOV 2024</div>
-                <div className="preview-cal-grid">
-                  <div className="pc-day muted">28</div>
-                  <div className="pc-day muted">29</div>
-                  <div className="pc-day muted">30</div>
-                  <div className="pc-day muted">31</div>
-                  <div className="pc-day">1</div>
-                  <div className="pc-day">2</div>
-                  <div className="pc-day">3</div>
-                  <div className="pc-day has-event">4</div>
-                  <div className="pc-day">5</div>
-                  <div className="pc-day">6</div>
-                  <div className="pc-day">7</div>
-                  <div className="pc-day has-event">8</div>
-                  <div className="pc-day">9</div>
-                  <div className="pc-day">10</div>
-                  <div className="pc-day">11</div>
-                  <div className="pc-day has-event">12</div>
-                  <div className="pc-day">13</div>
-                  <div className="pc-day">14</div>
-                  <div className="pc-day has-event">15</div>
-                  <div className="pc-day">16</div>
-                  <div className="pc-day">17</div>
-                  <div className="pc-day">18</div>
-                  <div className="pc-day">19</div>
-                  <div className="pc-day today">20</div>
-                  <div className="pc-day">21</div>
-                  <div className="pc-day has-event">22</div>
-                  <div className="pc-day">23</div>
-                  <div className="pc-day">24</div>
-                  <div className="pc-day">25</div>
-                  <div className="pc-day">26</div>
-                  <div className="pc-day has-event">27</div>
-                  <div className="pc-day">28</div>
-                  <div className="pc-day">29</div>
-                  <div className="pc-day">30</div>
-                  <div className="pc-day muted">1</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="sec-bar">
-              <div className="sec-bar-fill" style={{ width: `${secProgress}%` }}></div>
-            </div>
-
-            <div className="next-up">
-              <div className="next-tag">
-                <span className="dot"></span>
-                NEXT UP · IN 18 MIN
-              </div>
-              <div className="next-title">Architecture Review</div>
-              <div className="next-meta">15:00 — 16:00 · Platform Team · 6 attendees</div>
-            </div>
-          </div>
-
-          <div className="stat-row fade-up fade-up-3">
-            <div className="stat-mini">
-              <div className="stat-mini-value">12K<span className="unit">+</span></div>
-              <div className="stat-mini-label">Active planners</div>
-            </div>
-            <div className="stat-mini">
-              <div className="stat-mini-value">99.9<span className="unit">%</span></div>
-              <div className="stat-mini-label">Uptime · 90d</div>
-            </div>
-            <div className="stat-mini">
-              <div className="stat-mini-value">4.9<span className="unit">/5</span></div>
-              <div className="stat-mini-label">User rating</div>
-            </div>
-          </div>
-
-          <footer className="auth-footer fade-up fade-up-4">
-            <div className="status-indicator">
-              <span className="dot"></span>
-              All systems operational
-            </div>
-            <div className="footer-links">
-              <a href="#" onClick={(e) => { e.preventDefault(); showToast("Opening privacy policy"); }}>Privacy</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); showToast("Opening terms of service"); }}>Terms</a>
-              <a href="#" onClick={(e) => { e.preventDefault(); showToast("Opening support center"); }}>Support</a>
-            </div>
-          </footer>
+          <img src="/pic.jpg" alt="Meridian calendar OS" className="auth-visual-img" />
         </aside>
 
         {/* RIGHT FORM PANEL */}
         <main className="auth-form-wrap">
-          <div className="form-top-bar">
-            <div className="top-bar-meta">
-              <span>{tab === "signin" ? "SIGN IN" : "SIGN UP"}</span> · SECURE CONNECTION · <span style={{ color: "var(--cyan)" }}>ENCRYPTED</span>
-            </div>
-            <a href="/" className="home-link">
-              Back to app
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M7 17l9.2-9.2M7 7h10v10" />
-              </svg>
-            </a>
-          </div>
-
           <div className="auth-form fade-up fade-up-2">
             {/* Tabs */}
             <div className="form-tabs">
