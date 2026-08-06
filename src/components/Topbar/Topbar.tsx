@@ -95,7 +95,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onScrollToToday }) => {
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <div>
+        <div className="topbar-heading">
           <h1 className="month-title">
             {monthName} <span className="year">{year}</span>
           </h1>

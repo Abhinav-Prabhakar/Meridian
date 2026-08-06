@@ -36,7 +36,7 @@ export const DayView: React.FC = () => {
     day: "numeric",
   });
 
-  const [nowTop, setNowTop] = useState(() => getNowPosition());
+  const [nowTop, setNowTop] = useState<number | null>(null);
   const isToday = dateStr === formatDateStr(new Date());
 
   useEffect(() => {
@@ -220,7 +220,7 @@ export const DayView: React.FC = () => {
         </div>
 
         {/* Now line */}
-        {isToday && <div className="now-line" style={{ top: `${nowTop}px`, left: "64px" }}></div>}
+        {isToday && nowTop !== null && <div className="now-line" style={{ top: `${nowTop}px`, left: "64px" }}></div>}
       </div>
     </div>
   );

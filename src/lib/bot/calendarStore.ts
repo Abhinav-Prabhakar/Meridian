@@ -1,8 +1,8 @@
 import { CalendarStoreEvent } from "./types";
-import { createCurrentWeekSeedEvents } from "@/lib/calendarSeed";
 
-// Server-side in-memory event store with seed defaults matching initial context
-let globalEvents: CalendarStoreEvent[] = createCurrentWeekSeedEvents();
+// The web client syncs the authenticated user's Supabase events before using
+// the bot. Keep this process-local store empty until that happens.
+let globalEvents: CalendarStoreEvent[] = [];
 
 export function getCalendarEvents(dateStr?: string): CalendarStoreEvent[] {
   if (dateStr) {
@@ -12,7 +12,7 @@ export function getCalendarEvents(dateStr?: string): CalendarStoreEvent[] {
 }
 
 export function syncCalendarEvents(events: CalendarStoreEvent[]): void {
-  if (Array.isArray(events) && events.length > 0) {
+  if (Array.isArray(events)) {
     globalEvents = [...events];
   }
 }

@@ -2,8 +2,6 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { CalendarCategory } from "./CalendarFilterContext";
-import { createCurrentWeekSeedEvents } from "@/lib/calendarSeed";
-import { formatDateStr, startOfWeek } from "@/lib/dateUtils";
 import { supabase } from "@/lib/supabase/client";
 
 export interface CalendarEvent {
@@ -16,6 +14,32 @@ export interface CalendarEvent {
   time: string; // formatted time string e.g. "09:00 — 10:00"
   meta?: string;
   attendees?: string[];
+}
+
+type EventRow = {
+  id: string;
+  date_str: string;
+  start_hour: number | string;
+  dur_hours: number | string;
+  title: string;
+  category: string;
+  time_str: string;
+  meta: string | null;
+  attendees: string[] | null;
+};
+
+function fromDatabaseEvent(row: EventRow): CalendarEvent {
+  return {
+    id: row.id,
+    dateStr: row.date_str,
+    start: Number(row.start_hour),
+    dur: Number(row.dur_hours),
+    title: row.title,
+    cat: row.category,
+    time: row.time_str,
+    meta: row.meta || undefined,
+    attendees: row.attendees || undefined,
+  };
 }
 
 export interface NotificationItem {
@@ -86,8 +110,6 @@ interface CalendarContextType {
   closeMobileSidebar: () => void;
 }
 
-const seedEvents: CalendarEvent[] = createCurrentWeekSeedEvents();
-
 const seedNotifications: NotificationItem[] = [
   { id: "n1", title: "Architecture Review starting in 18 minutes", time: "14:42", read: false, type: "upcoming" },
   { id: "n2", title: "Marcus marked OOO (AM) for Nov 19", time: "09:15", read: false, type: "reminder" },
@@ -96,9 +118,6 @@ const seedNotifications: NotificationItem[] = [
 
 const INITIAL_DATE = new Date();
 INITIAL_DATE.setHours(0, 0, 0, 0);
-const STORAGE_KEY = "meridian_events_v1";
-const SEED_WEEK_KEY = "meridian_seed_week_v1";
-
 const CalendarContext = createContext<CalendarContextType>({
   selectedDate: INITIAL_DATE,
   setSelectedDate: () => {},
@@ -106,7 +125,7 @@ const CalendarContext = createContext<CalendarContextType>({
   setMiniCalMonth: () => {},
   currentView: "week",
   setCurrentView: () => {},
-  events: seedEvents,
+  events: [],
   addEvent: () => {},
   updateEvent: () => {},
   deleteEvent: () => {},
@@ -153,7 +172,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date(INITIAL_DATE));
   const [miniCalMonth, setMiniCalMonth] = useState<Date>(() => new Date(INITIAL_DATE));
   const [currentView, setCurrentView] = useState<CalendarViewMode>("week");
-  const [events, setEvents] = useState<CalendarEvent[]>(() => createCurrentWeekSeedEvents());
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isNewEventOpen, setIsNewEventOpen] = useState<boolean>(false);
   const [newEventInitialData, setNewEventInitialData] = useState<NewEventInitialData | null>(null);
   const [viewingEvent, setViewingEvent] = useState<CalendarEvent | null>(null);
@@ -167,122 +186,121 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isBotChatOpen, setIsBotChatOpen] = useState<boolean>(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    try {
-      const currentSeedWeek = formatDateStr(startOfWeek(new Date()));
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const savedSeedWeek = localStorage.getItem(SEED_WEEK_KEY);
-          if (savedSeedWeek !== currentSeedWeek) {
-            const currentSeedEvents = createCurrentWeekSeedEvents();
-            const seedById = new Map(currentSeedEvents.map((event) => [event.id, event]));
-            const refreshedEvents = parsed.map((event) => seedById.get(event.id) || event);
-            window.setTimeout(() => setEvents(refreshedEvents), 0);
-            localStorage.setItem(SEED_WEEK_KEY, currentSeedWeek);
-          } else {
-            window.setTimeout(() => setEvents(parsed), 0);
-          }
-        }
-      } else {
-        localStorage.setItem(SEED_WEEK_KEY, currentSeedWeek);
-      }
-    } catch {
-      // Ignore
+  const loadEvents = useCallback(async (userId: string | null) => {
+    if (!userId) {
+      setEvents([]);
+      return;
     }
-  }, []);
 
-  // Supabase DB fetch & sync
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        supabase
-          .from("events")
-          .select("*")
-          .eq("user_id", user.id)
-          .then(({ data }) => {
-            if (data && data.length > 0) {
-              const dbEvents: CalendarEvent[] = data.map((row: any) => ({
-                id: row.id,
-                dateStr: row.date_str,
-                start: Number(row.start_hour),
-                dur: Number(row.dur_hours),
-                title: row.title,
-                cat: row.category,
-                time: row.time_str,
-                meta: row.meta,
-                attendees: row.attendees,
-              }));
-              setEvents(dbEvents);
-            }
-          });
-      }
-    });
-  }, []);
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .eq("user_id", userId)
+      .order("date_str", { ascending: true })
+      .order("start_hour", { ascending: true });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-    } catch {
-      // Ignore
+    if (error) {
+      console.error("Failed to load calendar events from Supabase:", error.message);
+      setEvents([]);
+      return;
     }
-  }, [events]);
 
-  const addEvent = useCallback((newEvent: Omit<CalendarEvent, "id">) => {
-    const id = Date.now().toString();
-    const eventObj = { ...newEvent, id };
-    setEvents((prev) => [...prev, eventObj]);
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        supabase.from("events").insert({
-          user_id: user.id,
-          date_str: newEvent.dateStr,
-          start_hour: newEvent.start,
-          dur_hours: newEvent.dur,
-          title: newEvent.title,
-          category: newEvent.cat,
-          time_str: newEvent.time,
-          meta: newEvent.meta,
-          attendees: newEvent.attendees,
-        }).then(() => {});
-      }
-    });
+    setEvents((data as EventRow[] | null)?.map(fromDatabaseEvent) || []);
   }, []);
 
-  const updateEvent = useCallback((id: string, updated: Omit<CalendarEvent, "id">) => {
+  useEffect(() => {
+    let active = true;
+
+    const loadCurrentUserEvents = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!active) return;
+      if (error) {
+        console.error("Failed to resolve the Supabase user:", error.message);
+        setEvents([]);
+        return;
+      }
+      await loadEvents(data.user?.id || null);
+    };
+
+    void loadCurrentUserEvents();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (active) void loadEvents(session?.user.id || null);
+    });
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, [loadEvents]);
+
+  const addEvent = useCallback(async (newEvent: Omit<CalendarEvent, "id">) => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+
+    const { data, error } = await supabase
+      .from("events")
+      .insert({
+        user_id: userData.user.id,
+        date_str: newEvent.dateStr,
+        start_hour: newEvent.start,
+        dur_hours: newEvent.dur,
+        title: newEvent.title,
+        category: newEvent.cat,
+        time_str: newEvent.time,
+        meta: newEvent.meta,
+        attendees: newEvent.attendees,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("Failed to add calendar event to Supabase:", error.message);
+      return;
+    }
+    setEvents((prev) => [...prev, fromDatabaseEvent(data as EventRow)]);
+  }, []);
+
+  const updateEvent = useCallback(async (id: string, updated: Omit<CalendarEvent, "id">) => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+
+    const { error } = await supabase
+      .from("events")
+      .update({
+        date_str: updated.dateStr,
+        start_hour: updated.start,
+        dur_hours: updated.dur,
+        title: updated.title,
+        category: updated.cat,
+        time_str: updated.time,
+        meta: updated.meta,
+        attendees: updated.attendees,
+      })
+      .eq("id", id)
+      .eq("user_id", userData.user.id);
+
+    if (error) {
+      console.error("Failed to update calendar event in Supabase:", error.message);
+      return;
+    }
     setEvents((prev) => prev.map((ev) => (ev.id === id ? { ...updated, id } : ev)));
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        supabase
-          .from("events")
-          .update({
-            date_str: updated.dateStr,
-            start_hour: updated.start,
-            dur_hours: updated.dur,
-            title: updated.title,
-            category: updated.cat,
-            time_str: updated.time,
-            meta: updated.meta,
-            attendees: updated.attendees,
-          })
-          .eq("id", id)
-          .eq("user_id", user.id)
-          .then(() => {});
-      }
-    });
   }, []);
 
-  const deleteEvent = useCallback((id: string) => {
-    setEvents((prev) => prev.filter((ev) => ev.id !== id));
+  const deleteEvent = useCallback(async (id: string) => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        supabase.from("events").delete().eq("id", id).eq("user_id", user.id).then(() => {});
-      }
-    });
+    const { error } = await supabase
+      .from("events")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userData.user.id);
+
+    if (error) {
+      console.error("Failed to delete calendar event from Supabase:", error.message);
+      return;
+    }
+    setEvents((prev) => prev.filter((ev) => ev.id !== id));
   }, []);
 
   const openNewEventModal = useCallback((initialData?: NewEventInitialData) => {

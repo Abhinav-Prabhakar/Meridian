@@ -56,7 +56,9 @@ export const WeekBody: React.FC = () => {
   const todayStr = formatDateStr(new Date());
 
   // Live real-time clock position ticker
-  const [nowTop, setNowTop] = useState<number>(() => getNowPosition());
+  // Do not calculate this during SSR. Vercel renders in UTC while the browser
+  // uses the user's local clock, which can briefly place NOW at the wrong hour.
+  const [nowTop, setNowTop] = useState<number | null>(null);
 
   useEffect(() => {
     const updateNowPosition = () => setNowTop(getNowPosition(new Date()));
@@ -325,7 +327,7 @@ export const WeekBody: React.FC = () => {
       })}
 
       {/* Now line at current live time */}
-      <div className="now-line" style={{ top: `${nowTop}px` }}></div>
+      {nowTop !== null && <div className="now-line" style={{ top: `${nowTop}px` }}></div>}
     </div>
   );
 };

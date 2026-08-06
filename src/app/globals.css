@@ -278,7 +278,8 @@ body {
   border-bottom: 1px solid var(--border);
   gap: 24px; background: var(--bg-1);
 }
-.topbar-left { display: flex; align-items: baseline; gap: 14px; }
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.topbar-heading { display: flex; align-items: center; gap: 14px; }
 .month-title {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 28px; font-weight: 600;
@@ -1714,6 +1715,7 @@ body {
     display: flex !important;
     align-items: center !important;
   }
+  .topbar-heading { gap: 8px !important; }
   .month-title { font-size: 15px !important; }
   .week-range { font-size: 10.5px !important; }
 
@@ -1791,5 +1793,4 @@ body {
   .month-title { font-size: 14px !important; }
   .week-range { font-size: 10px !important; }
 }
-
 
