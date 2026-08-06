@@ -71,6 +71,13 @@ interface CalendarContextType {
   isReportOpen: boolean;
   openReport: () => void;
   closeReport: () => void;
+  isIntegrationsOpen: boolean;
+  openIntegrations: () => void;
+  closeIntegrations: () => void;
+  isBotChatOpen: boolean;
+  openBotChat: () => void;
+  closeBotChat: () => void;
+  toggleBotChat: () => void;
 }
 
 const seedEvents: CalendarEvent[] = [
@@ -172,6 +179,8 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
   const [isReportOpen, setIsReportOpen] = useState<boolean>(false);
+  const [isIntegrationsOpen, setIsIntegrationsOpen] = useState<boolean>(false);
+  const [isBotChatOpen, setIsBotChatOpen] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -264,6 +273,13 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isReportOpen,
         openReport: () => setIsReportOpen(true),
         closeReport: () => setIsReportOpen(false),
+        isIntegrationsOpen,
+        openIntegrations: () => setIsIntegrationsOpen(true),
+        closeIntegrations: () => setIsIntegrationsOpen(false),
+        isBotChatOpen,
+        openBotChat: () => setIsBotChatOpen(true),
+        closeBotChat: () => setIsBotChatOpen(false),
+        toggleBotChat: () => setIsBotChatOpen((prev) => !prev),
       }}
     >
       {children}

@@ -18,6 +18,8 @@ import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { ThemeCustomizerModal } from "@/components/ThemeCustomizerModal";
 import { NewCalendarModal } from "@/components/NewCalendarModal";
 import { WeeklyReportModal } from "@/components/WeeklyReportModal";
+import { IntegrationsModal } from "@/components/IntegrationsModal";
+import { BotChatDrawer } from "@/components/BotChatDrawer";
 
 function MainContent() {
   const { showToast } = useToast();
@@ -37,6 +39,10 @@ function MainContent() {
     closeShare,
     openReport,
     closeReport,
+    closeIntegrations,
+    closeBotChat,
+    openBotChat,
+    openIntegrations,
   } = useCalendar();
   const { openThemeModal, closeThemeModal } = useTheme();
 
@@ -51,7 +57,7 @@ function MainContent() {
   useEffect(() => {
     // Initial welcome toast
     const timer = setTimeout(() => {
-      showToast("Welcome back, Alex — 3 meetings left today");
+      showToast("Welcome back, Alex — Caspian Bot ready on Telegram & Web");
     }, 600);
 
     // Comprehensive professional keyboard shortcuts
@@ -78,9 +84,17 @@ function MainContent() {
         closeShortcuts();
         closeThemeModal();
         closeReport();
+        closeIntegrations();
+        closeBotChat();
       } else if (key === "n" || key === "c") {
         e.preventDefault();
         openNewEventModal();
+      } else if (key === "b") {
+        e.preventDefault();
+        openBotChat();
+      } else if (key === "i") {
+        e.preventDefault();
+        openIntegrations();
       } else if (key === "t") {
         e.preventDefault();
         const today = new Date(2024, 10, 20); // Nov 20, 2024 demo date
@@ -155,6 +169,10 @@ function MainContent() {
     closeShare,
     openReport,
     closeReport,
+    closeIntegrations,
+    closeBotChat,
+    openBotChat,
+    openIntegrations,
     openThemeModal,
     closeThemeModal,
   ]);
@@ -181,6 +199,8 @@ function MainContent() {
       <ThemeCustomizerModal />
       <NewCalendarModal />
       <WeeklyReportModal />
+      <IntegrationsModal />
+      <BotChatDrawer />
     </>
   );
 }

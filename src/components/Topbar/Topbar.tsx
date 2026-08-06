@@ -31,6 +31,8 @@ export const Topbar: React.FC<TopbarProps> = ({ onScrollToToday }) => {
     openSearch,
     openNotifications,
     openShare,
+    openBotChat,
+    openIntegrations,
     notifications,
   } = useCalendar();
   const { showToast } = useToast();
@@ -123,6 +125,12 @@ export const Topbar: React.FC<TopbarProps> = ({ onScrollToToday }) => {
             </button>
           ))}
         </div>
+        <button className="icon-btn" title="AI Assistant (B)" onClick={openBotChat} style={{ color: "var(--accent)" }}>
+          🤖
+        </button>
+        <button className="icon-btn" title="App Integrations (Telegram/Caspian)" onClick={openIntegrations}>
+          ⚡
+        </button>
         <button className="icon-btn" title="Search (/)" onClick={openSearch}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
