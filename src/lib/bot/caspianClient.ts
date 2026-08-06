@@ -2,6 +2,7 @@ import { CommClient, type Connection, type Message } from "caspian-sdk";
 import { formatDateStr } from "@/lib/dateUtils";
 import { CaspianBotConfig, ChannelStatus, IntegrationChannel } from "./types";
 import { processAgentMessage } from "./groqAgent";
+import { markdownToTelegramBlocks } from "./telegramBlocks";
 
 export interface IntegrationResult {
   success: boolean;
@@ -209,7 +210,7 @@ class CaspianManager {
     if (!this.isListening) {
       this.isListening = true;
       this.getClient()
-        .listen({ ack: "On it — checking your calendar…" })
+        .listen()
         .catch((error: unknown) => {
           this.isListening = false;
           console.warn("Caspian listener stopped:", this.errorMessage(error, "listener error"));
@@ -230,7 +231,8 @@ class CaspianManager {
         formatDateStr(new Date()),
         channelGuide
       );
-      await message.reply(result.reply);
+      const telegramBlocks = message.channel === "telegram" ? markdownToTelegramBlocks(result.reply) : null;
+      await message.reply(result.reply, null, telegramBlocks);
     } catch (error: unknown) {
       const messageText = this.errorMessage(error, "Calendar assistant failed");
       try {
