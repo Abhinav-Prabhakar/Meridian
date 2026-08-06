@@ -1,14 +1,65 @@
-# ⚡ MERIDIAN — Calendar OS
+<div align="center">
 
-> **Orchestrate your time. Capture events from every chat app. Coordinate availability across teams.**
+  <!-- Project Icon / Logo -->
+  <p align="center">
+    <samp>
+      <img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/master/icons/calendar.svg" width="100" alt="Meridian Logo" />
+    </samp>
+  </p>
 
-Meridian is a modern, high-performance calendar operating system designed for professionals and teams who plan at scale. Powered by **Caspian SDK**, **Groq GPT-OSS-120b**, and **Supabase**, Meridian turns scattered natural language messages across all your communication channels into a unified, conflict-free schedule.
+  <!-- Centered Title & Subtitle -->
+  <h1>⚡ MERIDIAN</h1>
+  <p><b>The Next-Generation Calendar Operating System</b></p>
+
+  <!-- High-Impact Tagline -->
+  <p align="center">
+    <i>Orchestrate your time. Capture events from every chat app. Coordinate availability across teams.</i>
+  </p>
+
+  <!-- Badges -->
+  <p align="center">
+    <a href="https://github.com/Abhinav-Prabhakar/Meridian">
+      <img src="https://img.shields.io/badge/Engine-Groq%20GPT--OSS--120b-orange?style=for-the-badge&logo=openai&logoColor=white" alt="Groq Engine" />
+    </a>
+    <a href="https://supabase.com">
+      <img src="https://img.shields.io/badge/Database-Supabase-green?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
+    </a>
+    <a href="#">
+      <img src="https://img.shields.io/badge/Gateway-Caspian%20SDK-blue?style=for-the-badge&logo=express&logoColor=white" alt="Caspian SDK" />
+    </a>
+    <a href="https://github.com/Abhinav-Prabhakar/Meridian/blob/main/LICENSE">
+      <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="MIT License" />
+    </a>
+  </p>
+
+  <!-- Quick Navigation -->
+  <p align="center">
+    <a href="#📸-product-showcase">Showcase</a> •
+    <a href="#✨-core-value-propositions">Core Values</a> •
+    <a href="#🔥-key-features">Features</a> •
+    <a href="#-quick-start">Quick Start</a> •
+    <a href="#-keyboard-shortcuts">Shortcuts</a>
+  </p>
+
+</div>
+
+---
+
+### 🪐 What is Meridian?
+
+**Meridian** is a high-performance, keyboard-first calendar operating system engineered for professionals and teams who plan at scale. 
+
+By fusing the **Caspian SDK**, **Groq's ultra-low latency GPT-OSS-120b**, and **Supabase**, Meridian acts as an ambient scheduling intelligence. It continuously monitors your communication channels (Slack, Telegram, Discord, Email), instantly extracting messy, unstructured natural language into a beautifully organized, conflict-free timeline.
+
+No more manual data entry. No more context switching. Just pure temporal flow.
 
 ---
 
 ## 📸 Product Showcase
 
-<img src="./public/shot.png" alt="Meridian Calendar OS screenshot" width="100%" />
+<p align="center">
+  <img src="./public/shot.png" alt="Meridian Calendar OS screenshot" width="100%" style="border-radius: 10px; border: 1px solid #30363d; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+</p>
 
 ---
 
