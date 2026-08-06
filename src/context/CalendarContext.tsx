@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { CalendarCategory } from "./CalendarFilterContext";
 import { createCurrentWeekSeedEvents } from "@/lib/calendarSeed";
 import { formatDateStr, startOfWeek } from "@/lib/dateUtils";
+import { supabase } from "@/lib/supabase/client";
 
 export interface CalendarEvent {
   id: string;
@@ -185,6 +186,34 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
+  // Supabase DB fetch & sync
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from("events")
+          .select("*")
+          .eq("user_id", user.id)
+          .then(({ data }) => {
+            if (data && data.length > 0) {
+              const dbEvents: CalendarEvent[] = data.map((row: any) => ({
+                id: row.id,
+                dateStr: row.date_str,
+                start: Number(row.start_hour),
+                dur: Number(row.dur_hours),
+                title: row.title,
+                cat: row.category,
+                time: row.time_str,
+                meta: row.meta,
+                attendees: row.attendees,
+              }));
+              setEvents(dbEvents);
+            }
+          });
+      }
+    });
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
@@ -195,15 +224,58 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const addEvent = useCallback((newEvent: Omit<CalendarEvent, "id">) => {
     const id = Date.now().toString();
-    setEvents((prev) => [...prev, { ...newEvent, id }]);
+    const eventObj = { ...newEvent, id };
+    setEvents((prev) => [...prev, eventObj]);
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from("events").insert({
+          user_id: user.id,
+          date_str: newEvent.dateStr,
+          start_hour: newEvent.start,
+          dur_hours: newEvent.dur,
+          title: newEvent.title,
+          category: newEvent.cat,
+          time_str: newEvent.time,
+          meta: newEvent.meta,
+          attendees: newEvent.attendees,
+        }).then(() => {});
+      }
+    });
   }, []);
 
   const updateEvent = useCallback((id: string, updated: Omit<CalendarEvent, "id">) => {
     setEvents((prev) => prev.map((ev) => (ev.id === id ? { ...updated, id } : ev)));
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from("events")
+          .update({
+            date_str: updated.dateStr,
+            start_hour: updated.start,
+            dur_hours: updated.dur,
+            title: updated.title,
+            category: updated.cat,
+            time_str: updated.time,
+            meta: updated.meta,
+            attendees: updated.attendees,
+          })
+          .eq("id", id)
+          .eq("user_id", user.id)
+          .then(() => {});
+      }
+    });
   }, []);
 
   const deleteEvent = useCallback((id: string) => {
     setEvents((prev) => prev.filter((ev) => ev.id !== id));
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from("events").delete().eq("id", id).eq("user_id", user.id).then(() => {});
+      }
+    });
   }, []);
 
   const openNewEventModal = useCallback((initialData?: NewEventInitialData) => {
