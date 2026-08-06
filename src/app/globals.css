@@ -251,20 +251,27 @@ body {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .user-status {
-  font-size: 10px; color: var(--fg-3);
-  display: flex; align-items: center; gap: 5px;
+  font-size: 10px;
+  display: flex; align-items: center; gap: 6px;
   margin-top: 2px;
 }
-.user-status::before {
-  content: ''; width: 6px; height: 6px;
-  background: var(--accent); border-radius: 50%;
-  box-shadow: 0 0 6px var(--accent);
-  animation: pulseStatus 2.5s infinite;
+.status-label {
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 0.14em; color: var(--fg-3);
 }
-@keyframes pulseStatus {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.status-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; letter-spacing: 0.05em;
+  color: var(--accent);
 }
+.user-signout-btn {
+  color: var(--fg-3);
+  padding: 5px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s;
+}
+.user-signout-btn svg { width: 15px; height: 15px; }
+.user-signout-btn:hover { color: var(--red); }
 
 /* ============ MAIN AREA ============ */
 .main-area {

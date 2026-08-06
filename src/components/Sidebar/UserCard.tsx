@@ -8,6 +8,20 @@ export const UserCard: React.FC = () => {
   const router = useRouter();
   const [userName, setUserName] = useState("Alex Kovac");
   const [userInitials, setUserInitials] = useState("AK");
+  const [liveTime, setLiveTime] = useState("");
+
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, "0");
+      const m = String(now.getMinutes()).padStart(2, "0");
+      const s = String(now.getSeconds()).padStart(2, "0");
+      setLiveTime(`${h}:${m}:${s}`);
+    };
+    updateClock();
+    const interval = setInterval(updateClock, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -53,20 +67,22 @@ export const UserCard: React.FC = () => {
         <div className="avatar">{userInitials}</div>
         <div className="user-info">
           <div className="user-name">{userName}</div>
-          <div className="user-status">Available · PST</div>
+          <div className="user-status">
+            <span className="status-label">LOCAL</span>
+            <span className="status-value">{liveTime || "--:--:--"}</span>
+          </div>
         </div>
       </div>
       <button
-        style={{
-          background: "none",
-          border: "none",
-          color: "var(--text-muted)",
-          fontSize: "11px",
-          cursor: "pointer",
-        }}
+        className="user-signout-btn"
+        style={{ background: "none", border: "none", cursor: "pointer" }}
         title="Sign Out"
       >
-        🚪
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
       </button>
     </div>
   );
