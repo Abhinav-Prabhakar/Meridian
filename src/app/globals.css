@@ -1466,8 +1466,8 @@ body {
 }
 .checkbox:hover .cal-check { border-color: var(--accent); }
 .cal-check.checked {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--cal-color, var(--accent)) !important;
+  border-color: var(--cal-color, var(--accent)) !important;
 }
 .cal-check.checked::after {
   content: ''; position: absolute;

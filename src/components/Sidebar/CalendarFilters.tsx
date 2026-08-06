@@ -196,7 +196,11 @@ export const CalendarFilters: React.FC = () => {
           >
             <div
               className={`cal-check ${isChecked ? "checked" : ""}`}
-              style={{ "--cal-color": item.colorVar } as React.CSSProperties}
+              style={{
+                backgroundColor: isChecked ? item.colorVar : "var(--bg-2)",
+                borderColor: isChecked ? item.colorVar : "var(--border-bright)",
+                "--cal-color": item.colorVar,
+              } as React.CSSProperties}
             ></div>
             <div className="cal-name">{item.name}</div>
             <div className="cal-count">{countFormatted}</div>
