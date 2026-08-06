@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 import { ToastProvider, useToast } from "@/context/ToastContext";
 import { CalendarFilterProvider } from "@/context/CalendarFilterContext";
 import { CalendarProvider, useCalendar } from "@/context/CalendarContext";
@@ -48,6 +50,8 @@ function MainContent() {
 
   const calendarAreaRef = useRef<CalendarAreaRef>(null);
 
+  const router = useRouter();
+
   const handleScrollToToday = () => {
     if (calendarAreaRef.current) {
       calendarAreaRef.current.scrollToToday();
@@ -55,9 +59,17 @@ function MainContent() {
   };
 
   useEffect(() => {
+    // Auth check guard: auto-navigate to /login if unauthenticated
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const localSession = typeof window !== "undefined" ? localStorage.getItem("meridian_user_session") : null;
+      if (!session && !localSession) {
+        router.push("/login");
+      }
+    });
+
     // Initial welcome toast
     const timer = setTimeout(() => {
-      showToast("Welcome back, Alex — Caspian Bot ready on Telegram & Web");
+      showToast("Welcome back — Caspian & Groq AI Engine Active");
     }, 600);
 
     // Comprehensive professional keyboard shortcuts
