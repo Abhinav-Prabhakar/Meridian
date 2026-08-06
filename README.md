@@ -6,11 +6,9 @@ Meridian is a modern, high-performance calendar operating system designed for pr
 
 ---
 
-## 📽️ Product Showcase & Demo
+## 📸 Product Showcase
 
-[![Meridian Product Demo Video](https://img.shields.getshields.io/badge/Watch-Product%20Demo%20Video-d4ff3d?style=for-the-badge&logo=youtube&logoColor=black)](#)
-
-> *(Watch how Meridian automatically parses incoming Telegram DMs, emails, Slack messages, and Discord chats to build an interactive, synchronized schedule in real time.)*
+<img src="/shot.png" alt="Meridian Calendar OS screenshot" width="100%" />
 
 ---
 
