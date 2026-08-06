@@ -34,6 +34,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onScrollToToday }) => {
     openBotChat,
     openIntegrations,
     notifications,
+    toggleMobileSidebar,
   } = useCalendar();
   const { showToast } = useToast();
 
@@ -82,11 +83,25 @@ export const Topbar: React.FC<TopbarProps> = ({ onScrollToToday }) => {
   return (
     <header className="topbar fade-up fade-up-1">
       <div className="topbar-left">
-        <h1 className="month-title">
-          {monthName} <span className="year">{year}</span>
-        </h1>
-        <div className="week-range">
-          {rangeStr} · WK {weekNum}
+        <button
+          className="mobile-menu-btn icon-btn"
+          onClick={toggleMobileSidebar}
+          title="Toggle Navigation Sidebar"
+          style={{ marginRight: "8px" }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <div>
+          <h1 className="month-title">
+            {monthName} <span className="year">{year}</span>
+          </h1>
+          <div className="week-range">
+            {rangeStr} · WK {weekNum}
+          </div>
         </div>
       </div>
 

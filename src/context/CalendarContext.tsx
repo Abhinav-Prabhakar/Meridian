@@ -81,6 +81,9 @@ interface CalendarContextType {
   openBotChat: () => void;
   closeBotChat: () => void;
   toggleBotChat: () => void;
+  isMobileSidebarOpen: boolean;
+  toggleMobileSidebar: () => void;
+  closeMobileSidebar: () => void;
 }
 
 const seedEvents: CalendarEvent[] = createCurrentWeekSeedEvents();
@@ -139,6 +142,9 @@ const CalendarContext = createContext<CalendarContextType>({
   openBotChat: () => {},
   closeBotChat: () => {},
   toggleBotChat: () => {},
+  isMobileSidebarOpen: false,
+  toggleMobileSidebar: () => {},
+  closeMobileSidebar: () => {},
 });
 
 export const useCalendar = () => useContext(CalendarContext);
@@ -159,6 +165,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isReportOpen, setIsReportOpen] = useState<boolean>(false);
   const [isIntegrationsOpen, setIsIntegrationsOpen] = useState<boolean>(false);
   const [isBotChatOpen, setIsBotChatOpen] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -341,6 +348,9 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         openBotChat: () => setIsBotChatOpen(true),
         closeBotChat: () => setIsBotChatOpen(false),
         toggleBotChat: () => setIsBotChatOpen((prev) => !prev),
+        isMobileSidebarOpen,
+        toggleMobileSidebar: () => setIsMobileSidebarOpen((prev) => !prev),
+        closeMobileSidebar: () => setIsMobileSidebarOpen(false),
       }}
     >
       {children}
