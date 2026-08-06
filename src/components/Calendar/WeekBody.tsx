@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
 import { useCalendarFilter } from "@/context/CalendarFilterContext";
 import { useToast } from "@/context/ToastContext";
+import { formatDateStr, getNowPosition } from "@/lib/dateUtils";
 
 const hours = [
   "7 AM", "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
@@ -21,20 +22,15 @@ export const WeekBody: React.FC = () => {
   const dayOfWeek = (monday.getDay() + 6) % 7;
   monday.setDate(monday.getDate() - dayOfWeek);
 
-  const todayObj = new Date(2024, 10, 20); // Nov 20, 2024 demo parity
-  const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, "0")}-${String(todayObj.getDate()).padStart(2, "0")}`;
+  const todayStr = formatDateStr(new Date());
 
   // Live real-time clock position ticker
-  const [nowTop, setNowTop] = useState<number>(() => (10 + 42 / 60 - 7) * 60);
+  const [nowTop, setNowTop] = useState<number>(() => getNowPosition());
 
   useEffect(() => {
     const updateNowPosition = () => {
       const now = new Date();
-      const h = now.getHours();
-      const m = now.getMinutes();
-      if (h >= 7 && h <= 20) {
-        setNowTop((h + m / 60 - 7) * 60);
-      }
+      setNowTop(getNowPosition(now));
     };
     updateNowPosition();
     const interval = setInterval(updateNowPosition, 60000);
@@ -102,7 +98,7 @@ export const WeekBody: React.FC = () => {
         const columnDate = new Date(monday);
         columnDate.setDate(columnDate.getDate() + dayIdx);
 
-        const dateStr = `${columnDate.getFullYear()}-${String(columnDate.getMonth() + 1).padStart(2, "0")}-${String(columnDate.getDate()).padStart(2, "0")}`;
+        const dateStr = formatDateStr(columnDate);
         const isToday = dateStr === todayStr;
         const dayEvents = events.filter((e) => e.dateStr === dateStr);
 

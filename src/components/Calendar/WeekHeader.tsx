@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useCalendar } from "@/context/CalendarContext";
+import { formatDateStr } from "@/lib/dateUtils";
 
 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -12,16 +13,13 @@ export const WeekHeader: React.FC = () => {
   const dayOfWeek = (monday.getDay() + 6) % 7;
   monday.setDate(monday.getDate() - dayOfWeek);
 
-  const todayObj = new Date(2024, 10, 20); // Nov 20, 2024 demo parity
+  const todayStr = formatDateStr(new Date());
 
   const days = dayNames.map((name, i) => {
     const curr = new Date(monday);
     curr.setDate(curr.getDate() + i);
 
-    const isToday =
-      curr.getFullYear() === todayObj.getFullYear() &&
-      curr.getMonth() === todayObj.getMonth() &&
-      curr.getDate() === todayObj.getDate();
+    const isToday = formatDateStr(curr) === todayStr;
 
     return {
       name,

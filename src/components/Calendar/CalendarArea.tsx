@@ -8,6 +8,7 @@ import { WeekBody } from "./WeekBody";
 import { DayView } from "./DayView";
 import { MonthView } from "./MonthView";
 import { AgendaView } from "./AgendaView";
+import { getNowPosition } from "@/lib/dateUtils";
 
 export interface CalendarAreaRef {
   scrollToToday: () => void;
@@ -19,7 +20,7 @@ export const CalendarArea = forwardRef<CalendarAreaRef>((_, ref) => {
 
   const scrollToCurrentTime = () => {
     if (calAreaRef.current) {
-      const nowTop = (10 + 42 / 60 - 7) * 60;
+      const nowTop = getNowPosition();
       calAreaRef.current.scrollTo({
         top: Math.max(0, nowTop - 180),
         behavior: "smooth",
@@ -34,7 +35,7 @@ export const CalendarArea = forwardRef<CalendarAreaRef>((_, ref) => {
   useEffect(() => {
     // Initial scroll position on load
     if (calAreaRef.current && currentView === "week") {
-      const nowTop = (10 + 42 / 60 - 7) * 60;
+      const nowTop = getNowPosition();
       calAreaRef.current.scrollTop = Math.max(0, nowTop - 180);
     }
   }, [currentView]);

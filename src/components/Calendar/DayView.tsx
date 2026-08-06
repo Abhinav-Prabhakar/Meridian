@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
 import { useCalendarFilter } from "@/context/CalendarFilterContext";
+import { formatDateStr, getNowPosition } from "@/lib/dateUtils";
 
 const hours = [
   "7 AM", "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
@@ -13,7 +14,7 @@ export const DayView: React.FC = () => {
   const { selectedDate, events, openEventDetails, openNewEventModal } = useCalendar();
   const { activeCategories } = useCalendarFilter();
 
-  const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+  const dateStr = formatDateStr(selectedDate);
   const dayEvents = events.filter((e) => e.dateStr === dateStr);
 
   const fullDateTitle = selectedDate.toLocaleDateString("en-US", {
@@ -23,7 +24,15 @@ export const DayView: React.FC = () => {
     day: "numeric",
   });
 
-  const nowTop = (10 + 42 / 60 - 7) * 60; // 222px
+  const [nowTop, setNowTop] = useState(() => getNowPosition());
+  const isToday = dateStr === formatDateStr(new Date());
+
+  useEffect(() => {
+    const updateNowPosition = () => setNowTop(getNowPosition());
+    updateNowPosition();
+    const interval = setInterval(updateNowPosition, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleEventClick = (e: React.MouseEvent, ev: CalendarEvent) => {
     e.stopPropagation();
@@ -112,7 +121,7 @@ export const DayView: React.FC = () => {
         </div>
 
         {/* Now line */}
-        <div className="now-line" style={{ top: `${nowTop}px`, left: "64px" }}></div>
+        {isToday && <div className="now-line" style={{ top: `${nowTop}px`, left: "64px" }}></div>}
       </div>
     </div>
   );

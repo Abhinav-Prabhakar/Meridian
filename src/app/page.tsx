@@ -97,7 +97,8 @@ function MainContent() {
         openIntegrations();
       } else if (key === "t") {
         e.preventDefault();
-        const today = new Date(2024, 10, 20); // Nov 20, 2024 demo date
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         setSelectedDate(today);
         showToast("Scrolled to today");
         handleScrollToToday();

@@ -65,7 +65,8 @@ export const Topbar: React.FC<TopbarProps> = ({ onScrollToToday }) => {
   };
 
   const handleResetToday = () => {
-    const today = new Date(2024, 10, 20); // Default demo date Nov 20, 2024
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     setSelectedDate(today);
     showToast("Scrolled to today");
     if (onScrollToToday) {

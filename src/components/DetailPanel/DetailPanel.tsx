@@ -4,6 +4,7 @@ import React from "react";
 import { useCalendar } from "@/context/CalendarContext";
 import { useToast } from "@/context/ToastContext";
 import { Scratchpad } from "./Scratchpad";
+import { formatDateStr } from "@/lib/dateUtils";
 
 export const DetailPanel: React.FC = () => {
   const { selectedDate, events, openEventDetails, openReport } = useCalendar();
@@ -23,7 +24,7 @@ export const DetailPanel: React.FC = () => {
   const weekEvents = events.filter((e) => weekDatesStr.includes(e.dateStr));
 
   // 1. Next Up calculation
-  const todayStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+  const todayStr = formatDateStr(new Date());
   const nextEvent =
     events
       .filter((e) => e.dateStr >= todayStr)

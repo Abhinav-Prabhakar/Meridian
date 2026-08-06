@@ -3,6 +3,7 @@
 import React from "react";
 import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
 import { useCalendarFilter } from "@/context/CalendarFilterContext";
+import { formatDateStr } from "@/lib/dateUtils";
 
 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -15,7 +16,7 @@ const categoryColors: Record<string, string> = {
 };
 
 export const MonthView: React.FC = () => {
-  const { selectedDate, setSelectedDate, events, openEventDetails, openNewEventModal } = useCalendar();
+  const { selectedDate, setSelectedDate, events, openEventDetails } = useCalendar();
   const { activeCategories } = useCalendarFilter();
 
   const year = selectedDate.getFullYear();
@@ -28,9 +29,8 @@ export const MonthView: React.FC = () => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
 
-  const todayObj = new Date(2024, 10, 20); // demo parity
-  const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, "0")}-${String(todayObj.getDate()).padStart(2, "0")}`;
-  const selectedStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+  const todayStr = formatDateStr(new Date());
+  const selectedStr = formatDateStr(selectedDate);
 
   interface MonthCell {
     num: number;
