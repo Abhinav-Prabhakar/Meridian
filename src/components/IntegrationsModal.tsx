@@ -12,6 +12,7 @@ export const IntegrationsModal: React.FC = () => {
   const [telegramToken, setTelegramToken] = useState<string>("");
   const [emailUsername, setEmailUsername] = useState<string>("");
   const [slackDisplayName, setSlackDisplayName] = useState<string>("");
+  const [discordDisplayName, setDiscordDisplayName] = useState<string>("");
   const [groqKey, setGroqKey] = useState<string>("");
   const [groqConfigured, setGroqConfigured] = useState(false);
   const [channels, setChannels] = useState<ChannelStatus[]>([
@@ -48,8 +49,8 @@ export const IntegrationsModal: React.FC = () => {
       icon: "🎮",
       connected: false,
       active: false,
-      statusText: "Roadmap: Phase 2",
-      description: "Discord server integration for personal and team calendar queries.",
+      statusText: "Ready to connect",
+      description: "Install the shared Discord bot for server messages and calendar queries.",
     },
   ]);
   const [isSaving, setIsSaving] = useState(false);
@@ -213,6 +214,40 @@ export const IntegrationsModal: React.FC = () => {
       }
     } catch {
       showToast("Failed to connect Slack");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInstallDiscord = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!groqConfigured && !groqKey.trim()) {
+      setKeyError(true);
+      showToast("❌ Add a Groq API key before connecting an AI integration.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/bot/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel: "discord",
+          action: "connect",
+          displayName: discordDisplayName,
+          groqApiKey: groqKey,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.status) setChannels(data.status);
+        showToast(data.message || "Discord bot ready");
+      } else {
+        showToast(data.message || data.error || "Failed to connect Discord");
+      }
+    } catch {
+      showToast("Failed to connect Discord");
     } finally {
       setIsSaving(false);
     }
@@ -436,6 +471,39 @@ export const IntegrationsModal: React.FC = () => {
                     )}
                     <button type="submit" className="btn-submit" disabled={isSaving}>
                       {isSaving ? "Starting..." : ch.authorizeUrl ? "Regenerate Link" : "Connect Slack"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {ch.id === "discord" && (
+                <form onSubmit={handleInstallDiscord} style={{ marginTop: "8px", borderTop: "1px dashed var(--border)", paddingTop: "12px" }}>
+                  <div className="form-group" style={{ marginBottom: "10px" }}>
+                    <label className="form-label" style={{ fontSize: "11px" }}>
+                      Display name (optional)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ fontSize: "12px" }}
+                      placeholder="Meridian Calendar"
+                      value={discordDisplayName}
+                      onChange={(e) => setDiscordDisplayName(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
+                    {ch.authorizeUrl && (
+                      <a href={ch.authorizeUrl} target="_blank" rel="noreferrer" className="link-btn">
+                        Authorize Discord →
+                      </a>
+                    )}
+                    {ch.connected && (
+                      <button type="button" className="btn-cancel" onClick={() => handleDisconnectChannel("discord")} disabled={isSaving}>
+                        Disconnect
+                      </button>
+                    )}
+                    <button type="submit" className="btn-submit" disabled={isSaving}>
+                      {isSaving ? "Starting..." : ch.authorizeUrl ? "Regenerate Link" : "Connect Discord"}
                     </button>
                   </div>
                 </form>

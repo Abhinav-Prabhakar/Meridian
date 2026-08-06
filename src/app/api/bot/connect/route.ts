@@ -63,6 +63,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ ...result, status: caspianManager.getStatus() }, { status: result.success ? 200 : 400 });
     }
 
+    if (channel === "discord" && action === "connect") {
+      const result = await caspianManager.installDiscord(
+        typeof displayName === "string" ? displayName : undefined,
+        typeof groqApiKey === "string" ? groqApiKey : undefined
+      );
+      return NextResponse.json({ ...result, status: caspianManager.getStatus() }, { status: result.success ? 200 : 400 });
+    }
+
     return NextResponse.json(
       { success: false, message: `Channel ${channel} is not configured yet` },
       { status: 400 }
