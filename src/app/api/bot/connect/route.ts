@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as Record<string, unknown>;
-    const { channel, botToken, groqApiKey, action } = body;
+    const { channel, botToken, groqApiKey, action, username } = body;
 
     if (!isIntegrationChannel(channel)) {
       return NextResponse.json({ success: false, message: "Unknown integration channel" }, { status: 400 });
@@ -39,6 +39,19 @@ export async function POST(req: Request) {
         typeof botToken === "string" ? botToken : "",
         typeof groqApiKey === "string" ? groqApiKey : undefined
       );
+      return NextResponse.json({ ...result, status: caspianManager.getStatus() }, { status: result.success ? 200 : 400 });
+    }
+
+    if (channel === "email" && action === "connect") {
+      const result = await caspianManager.connectEmail(
+        typeof username === "string" ? username : undefined,
+        typeof groqApiKey === "string" ? groqApiKey : undefined
+      );
+      return NextResponse.json({ ...result, status: caspianManager.getStatus() }, { status: result.success ? 200 : 400 });
+    }
+
+    if (channel === "email" && action === "test_email") {
+      const result = await caspianManager.testEmail();
       return NextResponse.json({ ...result, status: caspianManager.getStatus() }, { status: result.success ? 200 : 400 });
     }
 

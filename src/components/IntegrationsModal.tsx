@@ -10,7 +10,9 @@ export const IntegrationsModal: React.FC = () => {
   const { showToast } = useToast();
 
   const [telegramToken, setTelegramToken] = useState<string>("");
+  const [emailUsername, setEmailUsername] = useState<string>("");
   const [groqKey, setGroqKey] = useState<string>("");
+  const [groqConfigured, setGroqConfigured] = useState(false);
   const [channels, setChannels] = useState<ChannelStatus[]>([
     {
       id: "telegram",
@@ -25,10 +27,10 @@ export const IntegrationsModal: React.FC = () => {
       id: "email",
       name: "Email Agent",
       icon: "✉️",
-      connected: true,
-      active: true,
-      statusText: "Connected (my-agent@caspian.ai)",
-      description: "Forward invitation emails to your Caspian agent identity for automatic calendar syncing.",
+      connected: false,
+      active: false,
+      statusText: "Ready to connect",
+      description: "Send emails to your Caspian agent identity to manage your calendar.",
     },
     {
       id: "slack",
@@ -66,6 +68,7 @@ export const IntegrationsModal: React.FC = () => {
           if (data.config?.groqApiKey) {
             setGroqKey(data.config.groqApiKey);
           }
+          setGroqConfigured(Boolean(data.config?.groqConfigured));
         })
         .catch(() => {});
     }
@@ -76,7 +79,7 @@ export const IntegrationsModal: React.FC = () => {
   const handleConnectTelegram = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!groqKey || groqKey.trim().length === 0) {
+    if (!groqConfigured && (!groqKey || groqKey.trim().length === 0)) {
       setKeyError(true);
       showToast("❌ Groq API Key is REQUIRED for all AI Integrations!");
       return;
@@ -111,6 +114,57 @@ export const IntegrationsModal: React.FC = () => {
     }
   };
 
+  const handleConnectEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!groqConfigured && !groqKey.trim()) {
+      setKeyError(true);
+      showToast("❌ Add a Groq API key before connecting an AI integration.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/bot/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channel: "email",
+          action: "connect",
+          username: emailUsername,
+          groqApiKey: groqKey,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.status) setChannels(data.status);
+        showToast(data.message || "Email agent connected");
+      } else {
+        showToast(data.message || data.error || "Failed to connect email agent");
+      }
+    } catch {
+      showToast("Failed to connect email agent");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/bot/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: "email", action: "test_email" }),
+      });
+      const data = await res.json();
+      showToast(res.ok ? data.message : data.message || data.error || "Test email failed");
+    } catch {
+      showToast("Test email failed");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleDisconnectTelegram = async () => {
     setIsSaving(true);
     try {
@@ -131,6 +185,7 @@ export const IntegrationsModal: React.FC = () => {
   };
 
   const telegramChannel = channels.find((c) => c.id === "telegram");
+  const emailChannel = channels.find((c) => c.id === "email");
 
   return (
     <div className="modal-overlay" onClick={closeIntegrations}>
@@ -257,6 +312,53 @@ export const IntegrationsModal: React.FC = () => {
                     )}
                     <button type="submit" className="btn-submit" disabled={isSaving}>
                       {isSaving ? "Saving..." : telegramChannel?.connected ? "Update Integration" : "Save & Connect"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {ch.id === "email" && (
+                <form onSubmit={handleConnectEmail} style={{ marginTop: "8px", borderTop: "1px dashed var(--border)", paddingTop: "12px" }}>
+                  <div className="form-group" style={{ marginBottom: "10px" }}>
+                    <label className="form-label" style={{ fontSize: "11px" }}>
+                      Agent username (optional)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "12px" }}
+                      placeholder="alex"
+                      value={emailUsername}
+                      onChange={(e) => setEmailUsername(e.target.value)}
+                    />
+                    {emailChannel?.address && (
+                      <div style={{ fontSize: "10px", color: "var(--accent)", marginTop: "5px" }}>
+                        Agent address: {emailChannel.address}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                    {emailChannel?.connected && (
+                      <>
+                        <button type="button" className="btn-cancel" onClick={handleTestEmail} disabled={isSaving}>
+                          Send test email
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-cancel"
+                          onClick={() => fetch("/api/bot/connect", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ channel: "email", action: "disconnect" }),
+                          }).then(() => fetch("/api/bot/connect").then((res) => res.json()).then((data) => setChannels(data.status)))}
+                          disabled={isSaving}
+                        >
+                          Disconnect
+                        </button>
+                      </>
+                    )}
+                    <button type="submit" className="btn-submit" disabled={isSaving}>
+                      {isSaving ? "Saving..." : emailChannel?.connected ? "Update Integration" : "Connect Email"}
                     </button>
                   </div>
                 </form>
