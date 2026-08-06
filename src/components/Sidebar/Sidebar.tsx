@@ -17,7 +17,7 @@ export const Sidebar: React.FC = () => {
       {isMobileSidebarOpen && (
         <div className="sidebar-overlay" onClick={closeMobileSidebar} />
       )}
-      <aside className={`sidebar fade-up ${isMobileSidebarOpen ? "mobile-drawer-open" : ""}`}>
+      <aside className={`sidebar ${isMobileSidebarOpen ? "mobile-drawer-open" : ""}`}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", position: "relative", zIndex: 10 }}>
           <div style={{ flex: 1 }}>
             <Brand />
