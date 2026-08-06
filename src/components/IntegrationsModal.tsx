@@ -279,10 +279,17 @@ export const IntegrationsModal: React.FC = () => {
     <div className="modal-overlay" onClick={closeIntegrations}>
       <div
         className="modal-content"
-        style={{ maxWidth: "560px", padding: "28px" }}
+        style={{
+          maxWidth: "580px",
+          maxHeight: "85vh",
+          display: "flex",
+          flexDirection: "column",
+          padding: "24px",
+          overflow: "hidden",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="modal-header" style={{ marginBottom: "20px" }}>
+        <div className="modal-header" style={{ marginBottom: "16px", flexShrink: 0 }}>
           <div>
             <h2 className="modal-title" style={{ fontSize: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
               ⚡ App & Bot Integrations
@@ -295,6 +302,8 @@ export const IntegrationsModal: React.FC = () => {
             ✕
           </button>
         </div>
+
+        <div style={{ overflowY: "auto", flex: 1, paddingRight: "6px" }}>
 
         {/* Global Groq API Key Requirement Card */}
         <div
