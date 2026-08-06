@@ -22,6 +22,7 @@ import { NewCalendarModal } from "@/components/NewCalendarModal";
 import { WeeklyReportModal } from "@/components/WeeklyReportModal";
 import { IntegrationsModal } from "@/components/IntegrationsModal";
 import { BotChatDrawer } from "@/components/BotChatDrawer";
+import { TeamInviteModal } from "@/components/TeamInviteModal";
 
 function MainContent() {
   const { showToast } = useToast();
@@ -45,6 +46,8 @@ function MainContent() {
     closeBotChat,
     openBotChat,
     openIntegrations,
+    closeMobileSidebar,
+    closeTeamInvite,
   } = useCalendar();
   const { openThemeModal, closeThemeModal } = useTheme();
 
@@ -98,6 +101,8 @@ function MainContent() {
         closeReport();
         closeIntegrations();
         closeBotChat();
+        closeMobileSidebar();
+        closeTeamInvite();
       } else if (key === "n" || key === "c") {
         e.preventDefault();
         openNewEventModal();
@@ -214,6 +219,7 @@ function MainContent() {
       <WeeklyReportModal />
       <IntegrationsModal />
       <BotChatDrawer />
+      <TeamInviteModal />
     </>
   );
 }

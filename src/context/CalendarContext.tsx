@@ -112,6 +112,10 @@ interface CalendarContextType {
   isMobileSidebarOpen: boolean;
   toggleMobileSidebar: () => void;
   closeMobileSidebar: () => void;
+  isTeamInviteOpen: boolean;
+  openTeamInvite: (calName?: string) => void;
+  closeTeamInvite: () => void;
+  activeShareCalendar: string | null;
 }
 
 const INITIAL_DATE = new Date();
@@ -162,6 +166,10 @@ const CalendarContext = createContext<CalendarContextType>({
   isMobileSidebarOpen: false,
   toggleMobileSidebar: () => {},
   closeMobileSidebar: () => {},
+  isTeamInviteOpen: false,
+  openTeamInvite: () => {},
+  closeTeamInvite: () => {},
+  activeShareCalendar: null,
 });
 
 export const useCalendar = () => useContext(CalendarContext);
@@ -183,6 +191,8 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isIntegrationsOpen, setIsIntegrationsOpen] = useState<boolean>(false);
   const [isBotChatOpen, setIsBotChatOpen] = useState<boolean>(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isTeamInviteOpen, setIsTeamInviteOpen] = useState<boolean>(false);
+  const [activeShareCalendar, setActiveShareCalendar] = useState<string | null>(null);
 
   const loadEvents = useCallback(async (userId: string | null) => {
     if (!userId) {
@@ -369,6 +379,13 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isMobileSidebarOpen,
         toggleMobileSidebar: () => setIsMobileSidebarOpen((prev) => !prev),
         closeMobileSidebar: () => setIsMobileSidebarOpen(false),
+        isTeamInviteOpen,
+        openTeamInvite: (calName?: string) => {
+          if (calName) setActiveShareCalendar(calName);
+          setIsTeamInviteOpen(true);
+        },
+        closeTeamInvite: () => setIsTeamInviteOpen(false),
+        activeShareCalendar,
       }}
     >
       {children}

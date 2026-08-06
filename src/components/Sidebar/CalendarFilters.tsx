@@ -17,7 +17,7 @@ const PALETTE = [
 
 export const CalendarFilters: React.FC = () => {
   const { calendars, activeCategories, toggleCategory, addCustomCalendar, removeCalendar } = useCalendarFilter();
-  const { events } = useCalendar();
+  const { events, openTeamInvite } = useCalendar();
   const { showToast } = useToast();
 
   const [isCreatingInline, setIsCreatingInline] = useState(false);
@@ -236,6 +236,29 @@ export const CalendarFilters: React.FC = () => {
           >
             {contextMenu.calendar.name}
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              openTeamInvite(contextMenu.calendar.name);
+              setContextMenu(null);
+            }}
+            style={{
+              width: "100%",
+              textAlign: "left",
+              padding: "8px 10px",
+              background: "none",
+              border: "none",
+              color: "var(--accent)",
+              fontSize: "12px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontWeight: 600,
+            }}
+          >
+            👥 Share & Team Access
+          </button>
           <button
             type="button"
             onClick={() => handleToggle(contextMenu.calendar)}

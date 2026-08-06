@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meridian OS - Team Invite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* 1. DESIGN TOKENS */
+        :root {
+            /* Backgrounds & Surfaces */
+            --bg: #0a0b0d;
+            --bg-1: #0d0e11;
+            --bg-2: #14151a;
+            --bg-3: #1a1c22;
+            
+            /* Borders & Dividers */
+            --border: #232529;
+            --border-bright: #2e3138;
+            
+            /* Typography & Foreground */
+            --fg: #f4f1ea;
+            --fg-2: #9ea2ab;
+            --fg-3: #5a5d65;
+            
+            /* Accents & Categorical Colors */
+            --accent: #d4ff3d;
+            --accent-dim: rgba(212, 255, 61, 0.12);
+            
+            --orange: #ff9248;
+            --orange-dim: rgba(255, 146, 72, 0.12);
+            
+            --cyan: #5dd9d4;
+            --cyan-dim: rgba(93, 217, 212, 0.12);
+            
+            --pink: #ff7ab0;
+            --pink-dim: rgba(255, 122, 176, 0.12);
+            
+            --yellow: #ffd23f;
+            --yellow-dim: rgba(255, 210, 63, 0.12);
+            
+            --red: #ff4d4d;
+        }
+
+        /* 2. GLOBAL RESETS & TYPOGRAPHY */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: 'Inter Tight', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            overflow: hidden; /* OS Root style */
+        }
+
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--fg-3);
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+        }
+
+        /* 3. ATMOSPHERE LAYER */
+        .atmosphere {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            background-image: 
+                radial-gradient(circle at 0% 0%, var(--accent-dim) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, var(--orange-dim) 0%, transparent 45%),
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+            background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+            opacity: 0.8; 
+            mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+        }
+
+        /* 4. COMPONENT STYLES: TEAM INVITE PANEL */
+        .invite-panel {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 580px;
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Panel Header */
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .header-text h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            margin-bottom: 4px;
+        }
+
+        .header-text p {
+            color: var(--fg-2);
+            font-size: 12px;
+        }
+
+        .close-btn {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--fg-2);
+            transition: all 0.15s ease;
+        }
+
+        .close-btn:hover {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* Stats Grid (2x2 internal lines) */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            background: var(--border);
+            gap: 1px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-item {
+            background: var(--bg-1);
+            padding: 16px 20px;
+        }
+
+        .stat-val {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--fg);
+            margin-top: 6px;
+        }
+
+        .stat-val.accent { color: var(--accent); }
+        .stat-val.cyan { color: var(--cyan); }
+
+        /* Invite Form Area */
+        .form-area {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0;
+            border: 1px solid var(--border);
+            background: var(--bg-2);
+            transition: all 0.15s ease;
+        }
+
+        .input-group:focus-within {
+            border-color: var(--accent);
+            background: var(--bg-3);
+        }
+
+        .input-icon {
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            color: var(--fg-3);
+            border-right: 1px solid var(--border);
+        }
+
+        .email-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 12px;
+            color: var(--fg);
+            font-family: 'JetBrains Mono', monospace; /* Monospace for data input */
+            font-size: 12px;
+        }
+
+        .email-input::placeholder {
+            color: var(--fg-3);
+        }
+
+        .send-btn {
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            padding: 0 20px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+
+        .send-btn:hover {
+            background: #e0ff60;
+            box-shadow: -4px 0 12px var(--accent-dim);
+        }
+
+        /* Roster List */
+        .roster-area {
+            padding: 20px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .roster-area::-webkit-scrollbar { width: 4px; }
+        .roster-area::-webkit-scrollbar-track { background: var(--bg-1); }
+        .roster-area::-webkit-scrollbar-thumb { background: var(--bg-3); }
+
+        .roster-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .member-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .member-row {
+            display: grid;
+            grid-template-columns: 32px 1fr auto;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            background: var(--bg-2);
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+        }
+
+        .member-row:hover {
+            background: var(--bg-3);
+            border-color: var(--border-bright);
+        }
+
+        /* Avatars & Status */
+        .avatar-wrap {
+            position: relative;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--fg);
+            border: 2px solid var(--bg-2); /* Cuts out borders if overlapping */
+        }
+        
+        .member-row:hover .avatar {
+            border-color: var(--bg-3);
+        }
+
+        .avatar.role-admin { background: var(--accent-dim); color: var(--accent); border-radius: 50%; }
+        .avatar.role-edit { background: var(--cyan-dim); color: var(--cyan); border-radius: 50%; }
+        .avatar.role-view { background: var(--pink-dim); color: var(--pink); border-radius: 50%; }
+        .avatar.role-pending { background: var(--orange-dim); color: var(--orange); border-radius: 4px; } /* Square = Pending */
+
+        .status-dot {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-2);
+        }
+        .member-row:hover .status-dot { border-color: var(--bg-3); }
+        
+        .status-online { background: var(--accent); animation: pulseStatus 2s infinite; }
+        .status-idle { background: var(--yellow); }
+        .status-offline { background: var(--bg-3); border-color: var(--fg-3); }
+
+        .member-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: var(--fg);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .you-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: var(--accent);
+            background: var(--accent-dim);
+            padding: 2px 4px;
+            letter-spacing: 0.05em;
+        }
+
+        .member-email {
+            color: var(--fg-3);
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Permission Segmented Control */
+        .permissions-control {
+            display: flex;
+            align-items: center;
+            background: var(--bg-1);
+            border: 1px solid var(--border);
+            padding: 2px;
+            gap: 1px; /* Simulates inner borders cleanly */
+        }
+
+        .perm-btn {
+            background: transparent;
+            border: none;
+            color: var(--fg-3);
+            padding: 6px 10px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .perm-btn:hover { color: var(--fg-2); }
+
+        .perm-btn.active {
+            background: var(--bg-3);
+            color: var(--fg);
+        }
+        
+        .perm-btn.active[data-role="admin"] { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+        .perm-btn.active[data-role="edit"] { color: var(--cyan); box-shadow: inset 0 -2px 0 var(--cyan); }
+        .perm-btn.active[data-role="view"] { color: var(--pink); box-shadow: inset 0 -2px 0 var(--pink); }
+
+        /* Link Sharing Area */
+        .link-area {
+            padding: 20px;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .link-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .link-url {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--fg-2);
+        }
+
+        .copy-btn {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        /* Animations */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulseStatus {
+            0% { box-shadow: 0 0 0 0 rgba(212, 255, 61, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(212, 255, 61, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(212, 255, 61, 0); }
+        }
+
+        /* Staggered animation delays */
+        .fade-up-1 { animation-delay: 0.1s; }
+        .fade-up-2 { animation-delay: 0.2s; }
+        .fade-up-3 { animation-delay: 0.3s; }
+        .fade-up-4 { animation-delay: 0.4s; }
+        .hidden { display: none; }
+
+    </style>
+</head>
+<body>
+
+    <!-- The Atmospheric Base Layer -->
+    <div class="atmosphere"></div>
+
+    <!-- Main Team Invite Component -->
+    <div class="invite-panel">
+        
+        <!-- Header -->
+        <div class="panel-header fade-up-1">
+            <div class="header-text">
+                <h2 class="font-display">Team Access</h2>
+                <p>Manage roles, invitations, and workspace sync.</p>
+            </div>
+            <button class="close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid fade-up-2">
+            <div class="stat-item">
+                <span class="label font-mono">Total Seats</span>
+                <div class="stat-val font-mono">04</div>
+            </div>
+            <div class="stat-item">
+                <span class="label font-mono">Active Now</span>
+                <div class="stat-val accent font-mono">02</div>
+            </div>
+            <div class="stat-item">
+                <span class="label font-mono">Pending</span>
+                <div class="stat-val cyan font-mono">01</div>
+            </div>
+        </div>
+
+        <!-- Invite Input -->
+        <div class="form-area fade-up-3">
+            <label class="label" style="display:block; margin-bottom: 8px;">Invite by Email</label>
+            <div class="input-group">
+                <span class="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </span>
+                <input type="email" class="email-input" placeholder="name@company.com">
+                <button class="send-btn">
+                    Send Invite
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Roster List -->
+        <div class="roster-area fade-up-4">
+            <div class="roster-header">
+                <span class="label">Active Roster</span>
+                <span class="label font-mono" style="letter-spacing: 0.05em; color: var(--fg-2);">SORT: A-Z</span>
+            </div>
+
+            <div class="member-list">
+                
+                <!-- Member 1: Admin (You) -->
+                <div class="member-row">
+                    <div class="avatar-wrap">
+                        <div class="avatar role-admin">EA</div>
+                        <div class="status-dot status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Elliot Alderson <span class="you-tag font-mono">YOU</span></div>
+                        <div class="member-email">elliot@meridian.os</div>
+                    </div>
+                    <div class="permissions-control">
+                        <button class="perm-btn active" data-role="admin">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            Admin
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Member 2: Editor -->
+                <div class="member-row">
+                    <div class="avatar-wrap">
+                        <div class="avatar role-edit">TS</div>
+                        <div class="status-dot status-online"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Tyrell Wellick</div>
+                        <div class="member-email">tyrell@ecorp.com</div>
+                    </div>
+                    <div class="permissions-control">
+                        <button class="perm-btn" data-role="admin">Admin</button>
+                        <button class="perm-btn active" data-role="edit">Editor</button>
+                        <button class="perm-btn" data-role="view">Viewer</button>
+                    </div>
+                </div>
+
+                <!-- Member 3: Viewer -->
+                <div class="member-row">
+                    <div class="avatar-wrap">
+                        <div class="avatar role-view">DM</div>
+                        <div class="status-dot status-offline"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">Dominique DiPierro</div>
+                        <div class="member-email">dom@fbi.gov</div>
+                    </div>
+                    <div class="permissions-control">
+                        <button class="perm-btn" data-role="admin">Admin</button>
+                        <button class="perm-btn" data-role="edit">Editor</button>
+                        <button class="perm-btn active" data-role="view">Viewer</button>
+                    </div>
+                </div>
+
+                <!-- Member 4: Pending -->
+                <div class="member-row">
+                    <div class="avatar-wrap">
+                        <div class="avatar role-pending">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        </div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name" style="color: var(--fg-2);">Darlene Monroe</div>
+                        <div class="member-email">darlene@fsociety.zip · <span style="color: var(--orange);">PENDING</span></div>
+                    </div>
+                    <div class="permissions-control">
+                        <button class="perm-btn" data-role="admin">Admin</button>
+                        <button class="perm-btn active" data-role="edit">Editor</button>
+                        <button class="perm-btn" data-role="view">Viewer</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Magic Link Sharing -->
+        <div class="link-area">
+            <div class="link-content">
+                <span class="label">Share Public Link</span>
+                <span class="link-url">meridian.os/team/x7b2-9kf4... <span style="color: var(--fg-3);">(View Only)</span></span>
+            </div>
+            <button class="copy-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                Copy
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Simple interaction logic for the segmented controls
+        document.querySelectorAll('.member-row').forEach(row => {
+            const controls = row.querySelectorAll('.perm-btn');
+            controls.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    
+                    // Do not allow changing the primary Admin (You) role visually in this demo
+                    if(row.querySelector('.you-tag')) return;
+
+                    // Remove active from siblings
+                    controls.forEach(b => b.classList.remove('active'));
+                    // Add active to clicked
+                    btn.classList.add('active');
+
+                    // Extract role and update avatar shape/color accordingly
+                    const role = btn.getAttribute('data-role');
+                    const avatar = row.querySelector('.avatar');
+                    
+                    avatar.classList.remove('role-admin', 'role-edit', 'role-view');
+                    avatar.classList.add(`role-${role}`);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
