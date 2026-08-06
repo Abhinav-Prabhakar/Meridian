@@ -1,21 +1,19 @@
 export function getAuthRedirectUrl(path = "/"): string {
-  if (typeof window === "undefined") {
-    return path;
+  let origin = "";
+
+  if (typeof window !== "undefined" && window.location.origin) {
+    origin = window.location.origin;
+  } else if (process.env.NEXT_PUBLIC_SITE_URL) {
+    origin = process.env.NEXT_PUBLIC_SITE_URL;
+  } else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
+    origin = vercelUrl.startsWith("http") ? vercelUrl : `https://${vercelUrl}`;
+  } else {
+    origin = "http://localhost:3000";
   }
 
-  // Always prefer the actual browser origin in a deployed build. This avoids
-  // inheriting Supabase's local-development Site URL on Vercel.
-  const origin = window.location.origin;
-  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
-  const base = configuredOrigin && !isLocalhost(configuredOrigin) ? configuredOrigin : origin;
-  return new URL(path, `${base}/`).toString();
+  const cleanOrigin = origin.replace(/\/$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${cleanOrigin}${cleanPath}`;
 }
 
-function isLocalhost(value: string): boolean {
-  try {
-    const hostname = new URL(value).hostname;
-    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
-  } catch {
-    return false;
-  }
-}

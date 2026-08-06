@@ -18,15 +18,7 @@ export const Sidebar: React.FC = () => {
         <div className="sidebar-overlay" onClick={closeMobileSidebar} />
       )}
       <aside className={`sidebar fade-up ${isMobileSidebarOpen ? "mobile-drawer-open" : ""}`}>
-        <button
-          className="sidebar-close-btn"
-          onClick={closeMobileSidebar}
-          title="Close Navigation"
-        >
-          ✕
-        </button>
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", position: "relative", zIndex: 10 }}>
           <div style={{ flex: 1 }}>
             <Brand />
           </div>
@@ -41,6 +33,7 @@ export const Sidebar: React.FC = () => {
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
+              flexShrink: 0,
             }}
             onClick={openThemeModal}
           >
@@ -52,6 +45,16 @@ export const Sidebar: React.FC = () => {
                 background: accentColor,
               }}
             ></span>
+          </button>
+          <button
+            className="sidebar-close-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              closeMobileSidebar();
+            }}
+            title="Close Navigation"
+          >
+            ✕
           </button>
         </div>
 
