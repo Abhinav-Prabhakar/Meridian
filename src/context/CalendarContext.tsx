@@ -161,6 +161,13 @@ const CalendarContext = createContext<CalendarContextType>({
   isReportOpen: false,
   openReport: () => {},
   closeReport: () => {},
+  isIntegrationsOpen: false,
+  openIntegrations: () => {},
+  closeIntegrations: () => {},
+  isBotChatOpen: false,
+  openBotChat: () => {},
+  closeBotChat: () => {},
+  toggleBotChat: () => {},
 });
 
 export const useCalendar = () => useContext(CalendarContext);

@@ -54,21 +54,19 @@ export const IntegrationsModal: React.FC = () => {
   useEffect(() => {
     if (isIntegrationsOpen) {
       fetch("/api/bot/connect")
-        ? fetch("/api/bot/connect")
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.status) {
-                setChannels(data.status);
-              }
-              if (data.config?.telegramBotToken) {
-                setTelegramToken(data.config.telegramBotToken);
-              }
-              if (data.config?.groqApiKey) {
-                setGroqKey(data.config.groqApiKey);
-              }
-            })
-            .catch(() => {})
-        : null;
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status) {
+            setChannels(data.status);
+          }
+          if (data.config?.telegramBotToken) {
+            setTelegramToken(data.config.telegramBotToken);
+          }
+          if (data.config?.groqApiKey) {
+            setGroqKey(data.config.groqApiKey);
+          }
+        })
+        .catch(() => {});
     }
   }, [isIntegrationsOpen]);
 
