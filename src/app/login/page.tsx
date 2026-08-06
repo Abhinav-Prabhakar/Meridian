@@ -226,15 +226,15 @@ export default function LoginPage() {
 
           <div className="stat-row fade-up fade-up-3">
             <div className="stat-mini">
-              <div className="stat-mini-value">12K<span class="unit">+</span></div>
+              <div className="stat-mini-value">12K<span className="unit">+</span></div>
               <div className="stat-mini-label">Active planners</div>
             </div>
             <div className="stat-mini">
-              <div className="stat-mini-value">99.9<span class="unit">%</span></div>
+              <div className="stat-mini-value">99.9<span className="unit">%</span></div>
               <div className="stat-mini-label">Uptime · 90d</div>
             </div>
             <div className="stat-mini">
-              <div className="stat-mini-value">4.9<span class="unit">/5</span></div>
+              <div className="stat-mini-value">4.9<span className="unit">/5</span></div>
               <div className="stat-mini-label">User rating</div>
             </div>
           </div>

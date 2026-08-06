@@ -551,6 +551,7 @@ export const IntegrationsModal: React.FC = () => {
             Open Assistant
           </button>
         </div>
+        </div>
       </div>
     </div>
   );
