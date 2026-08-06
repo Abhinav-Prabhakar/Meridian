@@ -116,7 +116,7 @@ export const TeamInviteModal: React.FC = () => {
         {/* Header */}
         <div className="panel-header fade-up-1">
           <div className="header-text">
-            <h2 className="font-display">Team Access · {calendarName}</h2>
+            <h2 className="font-display">Team Access</h2>
             <p>Manage roles, invitations, and workspace sync.</p>
           </div>
           <button className="close-btn" onClick={closeTeamInvite} title="Close Panel">
@@ -206,7 +206,7 @@ export const TeamInviteModal: React.FC = () => {
         <div className="roster-area fade-up-4">
           <div className="roster-header">
             <span className="label">Active Roster</span>
-            <span className="label font-mono" style={{ letterSpacing: "0.05em", color: "var(--fg-2)" }}>
+            <span className="label font-mono" style={{ letterSpacing: "0.05em", color: "var(--fg-2)", fontSize: "9px" }}>
               SORT: A-Z
             </span>
           </div>

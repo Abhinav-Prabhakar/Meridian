@@ -1941,7 +1941,8 @@ body {
 }
 
 .send-btn:hover {
-  background: #e0ff60;
+  background: var(--accent);
+  filter: brightness(1.1);
   box-shadow: -4px 0 12px var(--accent-dim);
 }
 
