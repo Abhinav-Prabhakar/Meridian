@@ -8,7 +8,7 @@ Meridian is a modern, high-performance calendar operating system designed for pr
 
 ## 📸 Product Showcase
 
-<img src="/shot.png" alt="Meridian Calendar OS screenshot" width="100%" />
+<img src="./public/shot.png" alt="Meridian Calendar OS screenshot" width="100%" />
 
 ---
 
