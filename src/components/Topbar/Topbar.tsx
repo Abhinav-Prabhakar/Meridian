@@ -127,10 +127,19 @@ export const Topbar: React.FC<TopbarProps> = ({ onScrollToToday }) => {
           ))}
         </div>
         <button className="icon-btn" title="AI Assistant (B)" onClick={openBotChat} style={{ color: "var(--accent)" }}>
-          🤖
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="8" width="16" height="12" rx="2" />
+            <path d="M12 8V4" />
+            <circle cx="12" cy="3" r="1.5" />
+            <circle cx="9.5" cy="13" r="1" fill="currentColor" stroke="none" />
+            <circle cx="14.5" cy="13" r="1" fill="currentColor" stroke="none" />
+            <path d="M9.5 17h5" />
+          </svg>
         </button>
         <button className="icon-btn" title="App Integrations (Telegram/Caspian)" onClick={openIntegrations}>
-          ⚡
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
         </button>
         <button className="icon-btn" title="Search (/)" onClick={openSearch}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

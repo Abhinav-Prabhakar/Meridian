@@ -251,18 +251,9 @@ body {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .user-status {
-  font-size: 10px;
-  display: flex; align-items: center; gap: 6px;
+  font-size: 10.5px; color: var(--fg-3);
   margin-top: 2px;
-}
-.status-label {
-  font-size: 9px; font-weight: 600;
-  letter-spacing: 0.14em; color: var(--fg-3);
-}
-.status-value {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px; letter-spacing: 0.05em;
-  color: var(--accent);
+  letter-spacing: 0.02em;
 }
 .user-signout-btn {
   color: var(--fg-3);

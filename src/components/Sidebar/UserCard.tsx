@@ -8,20 +8,6 @@ export const UserCard: React.FC = () => {
   const router = useRouter();
   const [userName, setUserName] = useState("Alex Kovac");
   const [userInitials, setUserInitials] = useState("AK");
-  const [liveTime, setLiveTime] = useState("");
-
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, "0");
-      const m = String(now.getMinutes()).padStart(2, "0");
-      const s = String(now.getSeconds()).padStart(2, "0");
-      setLiveTime(`${h}:${m}:${s}`);
-    };
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -67,10 +53,7 @@ export const UserCard: React.FC = () => {
         <div className="avatar">{userInitials}</div>
         <div className="user-info">
           <div className="user-name">{userName}</div>
-          <div className="user-status">
-            <span className="status-label">LOCAL</span>
-            <span className="status-value">{liveTime || "--:--:--"}</span>
-          </div>
+          <div className="user-status">At work</div>
         </div>
       </div>
       <button
