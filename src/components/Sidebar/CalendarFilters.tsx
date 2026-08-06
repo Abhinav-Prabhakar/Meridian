@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useCalendarFilter } from "@/context/CalendarFilterContext";
+import { useCalendarFilter, CustomCalendar } from "@/context/CalendarFilterContext";
 import { useCalendar } from "@/context/CalendarContext";
 import { useToast } from "@/context/ToastContext";
 
@@ -16,7 +16,7 @@ const PALETTE = [
 ];
 
 export const CalendarFilters: React.FC = () => {
-  const { calendars, activeCategories, toggleCategory, addCustomCalendar } = useCalendarFilter();
+  const { calendars, activeCategories, toggleCategory, addCustomCalendar, removeCalendar } = useCalendarFilter();
   const { events } = useCalendar();
   const { showToast } = useToast();
 
@@ -25,13 +25,27 @@ export const CalendarFilters: React.FC = () => {
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Right click context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    calendar: CustomCalendar;
+  } | null>(null);
+
   useEffect(() => {
     if (isCreatingInline) {
       inputRef.current?.focus();
     }
   }, [isCreatingInline]);
 
-  const handleToggle = (item: { key: string; name: string }) => {
+  // Close context menu on outside click
+  useEffect(() => {
+    const handleOutsideClick = () => setContextMenu(null);
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, []);
+
+  const handleToggle = (item: CustomCalendar) => {
     const isVisible = toggleCategory(item.key);
     showToast(`${isVisible ? "Showing" : "Hiding"} ${item.name} calendar`);
   };
@@ -57,8 +71,24 @@ export const CalendarFilters: React.FC = () => {
     setSelectedColorIndex((prev) => (prev + 1) % PALETTE.length);
   };
 
+  const handleContextMenu = (e: React.MouseEvent, item: CustomCalendar) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      calendar: item,
+    });
+  };
+
+  const handleDeleteCalendar = (key: string, name: string) => {
+    removeCalendar(key);
+    setContextMenu(null);
+    showToast(`Deleted calendar "${name}"`);
+  };
+
   return (
-    <div>
+    <div style={{ position: "relative" }}>
       <div className="section-label">
         <span>My Calendars</span>
         <button
@@ -161,6 +191,8 @@ export const CalendarFilters: React.FC = () => {
             className="cal-item"
             data-cal={item.key}
             onClick={() => handleToggle(item)}
+            onContextMenu={(e) => handleContextMenu(e, item)}
+            title="Click to toggle, Right-click to delete"
           >
             <div
               className={`cal-check ${isChecked ? "checked" : ""}`}
@@ -171,6 +203,75 @@ export const CalendarFilters: React.FC = () => {
           </div>
         );
       })}
+
+      {/* Context Menu Popup for Right-Click Delete */}
+      {contextMenu && (
+        <div
+          style={{
+            position: "fixed",
+            top: `${contextMenu.y}px`,
+            left: `${contextMenu.x}px`,
+            zIndex: 9999,
+            background: "var(--bg-2)",
+            border: "1px solid var(--border-bright)",
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.6)",
+            padding: "4px",
+            minWidth: "140px",
+            borderRadius: "4px",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            style={{
+              padding: "6px 10px",
+              fontSize: "11px",
+              color: "var(--fg-3)",
+              borderBottom: "1px solid var(--border)",
+              fontWeight: 600,
+            }}
+          >
+            {contextMenu.calendar.name}
+          </div>
+          <button
+            type="button"
+            onClick={() => handleToggle(contextMenu.calendar)}
+            style={{
+              width: "100%",
+              textAlign: "left",
+              padding: "8px 10px",
+              background: "none",
+              border: "none",
+              color: "var(--fg)",
+              fontSize: "12px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            👁️ Toggle Visibility
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDeleteCalendar(contextMenu.calendar.key, contextMenu.calendar.name)}
+            style={{
+              width: "100%",
+              textAlign: "left",
+              padding: "8px 10px",
+              background: "none",
+              border: "none",
+              color: "var(--red)",
+              fontSize: "12px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            🗑️ Delete Calendar
+          </button>
+        </div>
+      )}
     </div>
   );
 };

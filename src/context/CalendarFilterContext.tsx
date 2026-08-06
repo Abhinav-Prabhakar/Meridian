@@ -23,6 +23,7 @@ interface CalendarFilterContextType {
   activeCategories: Record<string, boolean>;
   toggleCategory: (cat: string) => boolean;
   addCustomCalendar: (name: string, colorVar: string) => void;
+  removeCalendar: (key: string) => void;
   isAddCalendarOpen: boolean;
   openAddCalendarModal: () => void;
   closeAddCalendarModal: () => void;
@@ -39,6 +40,7 @@ const CalendarFilterContext = createContext<CalendarFilterContextType>({
   },
   toggleCategory: () => true,
   addCustomCalendar: () => {},
+  removeCalendar: () => {},
   isAddCalendarOpen: false,
   openAddCalendarModal: () => {},
   closeAddCalendarModal: () => {},
@@ -102,6 +104,18 @@ export const CalendarFilterProvider: React.FC<{ children: React.ReactNode }> = (
     setActiveCategories((prev) => ({ ...prev, [key]: true }));
   };
 
+  const removeCalendar = (key: string) => {
+    setCalendars((prev) => {
+      const updated = prev.filter((c) => c.key !== key);
+      try {
+        localStorage.setItem(CALENDARS_STORAGE_KEY, JSON.stringify(updated));
+      } catch {
+        // Ignore
+      }
+      return updated;
+    });
+  };
+
   return (
     <CalendarFilterContext.Provider
       value={{
@@ -109,6 +123,7 @@ export const CalendarFilterProvider: React.FC<{ children: React.ReactNode }> = (
         activeCategories,
         toggleCategory,
         addCustomCalendar,
+        removeCalendar,
         isAddCalendarOpen,
         openAddCalendarModal: () => setIsAddCalendarOpen(true),
         closeAddCalendarModal: () => setIsAddCalendarOpen(false),

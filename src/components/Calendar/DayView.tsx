@@ -209,11 +209,10 @@ export const DayView: React.FC = () => {
                     right: 0,
                     height: "8px",
                     cursor: "ns-resize",
-                    background: "rgba(255, 255, 255, 0.15)",
-                    borderRadius: "0 0 4px 4px",
+                    background: "transparent",
                   }}
                   onMouseDown={(e) => handleResizeStart(e, ev)}
-                  title="Drag to extend/cut duration (10 min snap)"
+                  title="Drag bottom edge to resize duration (10 min snap)"
                 />
               </div>
             );

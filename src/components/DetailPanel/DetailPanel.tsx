@@ -39,10 +39,19 @@ export const DetailPanel: React.FC = () => {
       attendees: ["SC", "MR", "JD", "+3"],
     };
 
+  // Helper to round numbers to 1-2 decimals cleanly without floating point artifacts
+  const formatNumber = (val: number, maxDecimals: number = 1): string => {
+    const factor = Math.pow(10, maxDecimals);
+    const rounded = Math.round(val * factor) / factor;
+    return Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(maxDecimals);
+  };
+
   // 2. This week stats
   const meetingsCount = weekEvents.filter((e) => e.cat === "meeting").length;
-  const focusHours = weekEvents.filter((e) => e.cat === "focus").reduce((acc, e) => acc + e.dur, 0);
-  const callHours = weekEvents.filter((e) => e.cat === "meeting" || e.cat === "strategy").reduce((acc, e) => acc + e.dur, 0);
+  const rawFocus = weekEvents.filter((e) => e.cat === "focus").reduce((acc, e) => acc + e.dur, 0);
+  const rawCalls = weekEvents.filter((e) => e.cat === "meeting" || e.cat === "strategy").reduce((acc, e) => acc + e.dur, 0);
+  const focusHours = formatNumber(rawFocus);
+  const callHours = formatNumber(rawCalls);
 
   // 3. Daily load calculation (Mon..Sun)
   const dailyHours = weekDatesStr.map((dStr) =>
@@ -51,7 +60,8 @@ export const DetailPanel: React.FC = () => {
 
   const selectedDateIdx = weekDatesStr.indexOf(todayStr);
   const activeDayIdx = selectedDateIdx >= 0 ? selectedDateIdx : 2;
-  const todayHours = dailyHours[activeDayIdx] || 5.2;
+  const todayHoursNum = dailyHours[activeDayIdx] || 5.2;
+  const todayHours = formatNumber(todayHoursNum);
 
   // 4. Upcoming agenda items
   const sortedUpcoming = events
@@ -149,9 +159,9 @@ export const DetailPanel: React.FC = () => {
           <span className="label">Daily load</span>
           <span
             className="meta"
-            style={{ color: todayHours > 4 ? "var(--orange)" : "var(--accent)" }}
+            style={{ color: todayHoursNum > 4 ? "var(--orange)" : "var(--accent)" }}
           >
-            {todayHours > 4 ? `+${Math.round(((todayHours - 4) / 4) * 100)}% OVER` : "ON TARGET"}
+            {todayHoursNum > 4 ? `+${Math.round(((todayHoursNum - 4) / 4) * 100)}% OVER` : "ON TARGET"}
           </span>
         </div>
         <div className="sparkline-card">
@@ -159,7 +169,7 @@ export const DetailPanel: React.FC = () => {
             <div>
               <div className="sparkline-title">Selected</div>
               <div className="sparkline-value">
-                {todayHours.toFixed(1)}
+                {todayHours}
                 <span style={{ color: "var(--fg-3)", fontSize: "12px" }}>h</span>
               </div>
             </div>
@@ -179,7 +189,7 @@ export const DetailPanel: React.FC = () => {
                   key={i}
                   className={`sparkline-bar ${isActive ? "active" : ""}`}
                   style={{ height: `${heightPct}%` }}
-                  title={`${dayAbbrs[i]}: ${h.toFixed(1)}h`}
+                  title={`${dayAbbrs[i]}: ${formatNumber(h)}h`}
                 ></div>
               );
             })}
