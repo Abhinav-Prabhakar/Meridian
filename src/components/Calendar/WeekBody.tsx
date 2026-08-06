@@ -13,6 +13,16 @@ const hours = [
 
 const dayAbbrs = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+function formatHourMin(hourVal: number): string {
+  const h = Math.floor(hourVal);
+  const m = Math.round((hourVal - h) * 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function buildTimeRangeStr(startHour: number, durHours: number): string {
+  return `${formatHourMin(startHour)} — ${formatHourMin(startHour + durHours)}`;
+}
+
 export const WeekBody: React.FC = () => {
   const { selectedDate, events, updateEvent, openEventDetails, openNewEventModal } = useCalendar();
   const { activeCategories } = useCalendarFilter();
@@ -47,7 +57,7 @@ export const WeekBody: React.FC = () => {
     openNewEventModal({ dateStr, startHour });
   };
 
-  // Drag and Drop handlers
+  // Drag and Drop handlers with 10-minute snapping
   const handleDragStart = (e: React.DragEvent, ev: CalendarEvent) => {
     e.dataTransfer.setData("text/plain", ev.id);
     e.dataTransfer.effectAllowed = "move";
@@ -58,17 +68,17 @@ export const WeekBody: React.FC = () => {
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (e: React.DragEvent, targetDateStr: string, hourIndex: number) => {
+  const handleDropOnColumn = (e: React.DragEvent, targetDateStr: string) => {
     e.preventDefault();
     const eventId = e.dataTransfer.getData("text/plain");
     const targetEvent = events.find((ev) => ev.id === eventId);
     if (!targetEvent) return;
 
-    const newStart = 7 + hourIndex;
-    const startFormatted = `${String(Math.floor(newStart)).padStart(2, "0")}:${newStart % 1 === 0.5 ? "30" : "00"}`;
-    const endH = newStart + targetEvent.dur;
-    const endFormatted = `${String(Math.floor(endH)).padStart(2, "0")}:${endH % 1 === 0.5 ? "30" : "00"}`;
-    const newTimeStr = `${startFormatted} — ${endFormatted}`;
+    const columnRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const offsetY = e.clientY - columnRect.top;
+    const snappedMinutes = Math.max(0, Math.min(13.83 * 60, Math.round(offsetY / 10) * 10));
+    const newStart = 7 + snappedMinutes / 60;
+    const newTimeStr = buildTimeRangeStr(newStart, targetEvent.dur);
 
     updateEvent(eventId, {
       ...targetEvent,
@@ -81,7 +91,37 @@ export const WeekBody: React.FC = () => {
     const dropDate = new Date(y, m - 1, d);
     const dayName = dayAbbrs[(dropDate.getDay() + 6) % 7];
 
-    showToast(`Rescheduled "${targetEvent.title}" to ${dayName} at ${hours[hourIndex]}`);
+    showToast(`Rescheduled "${targetEvent.title}" to ${dayName} at ${formatHourMin(newStart)}`);
+  };
+
+  // Bottom handle resize handler (10-minute snapping)
+  const handleResizeStart = (e: React.MouseEvent, ev: CalendarEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const startY = e.clientY;
+    const initialDurMins = ev.dur * 60;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const newMins = Math.max(10, Math.round((initialDurMins + deltaY) / 10) * 10);
+      const newDurHours = newMins / 60;
+      const newTimeStr = buildTimeRangeStr(ev.start, newDurHours);
+
+      updateEvent(ev.id, {
+        ...ev,
+        dur: newDurHours,
+        time: newTimeStr,
+      });
+    };
+
+    const onMouseUp = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      showToast(`Updated duration for "${ev.title}"`);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
   };
 
   return (
@@ -107,16 +147,16 @@ export const WeekBody: React.FC = () => {
             key={dayIdx}
             className={`day-column ${isToday ? "today-col" : ""}`}
             data-day={dayIdx}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDropOnColumn(e, dateStr)}
           >
             {Array.from({ length: 14 }).map((_, hIdx) => (
               <div
                 key={hIdx}
                 className="hour-line"
                 style={{ cursor: "pointer" }}
-                title={`Click to add event or drag event here (${hours[hIdx]})`}
+                title={`Click to add event (${hours[hIdx]})`}
                 onClick={() => handleSlotClick(dateStr, hIdx)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, dateStr, hIdx)}
               ></div>
             ))}
 
@@ -134,9 +174,9 @@ export const WeekBody: React.FC = () => {
                   className={`event cat-${ev.cat} ${compact ? "event-compact" : ""} ${
                     !isVisible ? "dimmed" : ""
                   }`}
-                  style={{ top: `${top}px`, height: `${height}px` }}
+                  style={{ top: `${top}px`, height: `${height}px`, position: "absolute" }}
                   onClick={(e) => handleEventClick(e, ev)}
-                  title="Drag to reschedule"
+                  title="Drag to reschedule (10 min snap), drag bottom handle to resize"
                 >
                   {compact ? (
                     <>
@@ -159,6 +199,23 @@ export const WeekBody: React.FC = () => {
                       )}
                     </>
                   )}
+
+                  {/* 10-Minute Resize Handle */}
+                  <div
+                    className="event-resize-handle"
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: "8px",
+                      cursor: "ns-resize",
+                      background: "rgba(255, 255, 255, 0.15)",
+                      borderRadius: "0 0 4px 4px",
+                    }}
+                    onMouseDown={(e) => handleResizeStart(e, ev)}
+                    title="Drag to extend/cut duration (10 min snap)"
+                  />
                 </div>
               );
             })}
