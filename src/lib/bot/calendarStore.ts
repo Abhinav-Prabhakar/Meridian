@@ -28,6 +28,8 @@ export function formatTimeRange(startHour: number, durHours: number): string {
   return `${formatHour(startHour)} — ${formatHour(startHour + durHours)}`;
 }
 
+import { supabase } from "@/lib/supabase/client";
+
 export function addCalendarEvent(data: {
   title: string;
   dateStr: string;
@@ -50,10 +52,53 @@ export function addCalendarEvent(data: {
     cat: data.cat || "meeting",
     time,
     allDay,
-    meta: data.meta || "Added via Caspian Bot",
+    meta: data.meta,
     attendees: data.attendees || ["Bot", "You"],
   };
   globalEvents.push(newEvent);
+
+  // Persist directly to Supabase events table
+  void (async () => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      let activeUserId = userData?.user?.id;
+
+      if (!activeUserId) {
+        const { data: sampleEvents } = await supabase.from("events").select("user_id").limit(1);
+        if (sampleEvents && sampleEvents[0]?.user_id) {
+          activeUserId = sampleEvents[0].user_id;
+        }
+      }
+
+      if (activeUserId) {
+        const { data: inserted, error } = await supabase
+          .from("events")
+          .insert({
+            user_id: activeUserId,
+            date_str: newEvent.dateStr,
+            start_hour: newEvent.start,
+            dur_hours: newEvent.dur,
+            title: newEvent.title,
+            category: newEvent.cat,
+            time_str: newEvent.time,
+            all_day: newEvent.allDay,
+            meta: newEvent.meta || null,
+            attendees: newEvent.attendees,
+          })
+          .select("*")
+          .single();
+
+        if (error) {
+          console.error("Failed to insert bot event to Supabase:", error.message);
+        } else if (inserted?.id) {
+          newEvent.id = inserted.id;
+        }
+      }
+    } catch (err) {
+      console.error("Error persisting bot event to Supabase:", err);
+    }
+  })();
+
   return newEvent;
 }
 
@@ -64,6 +109,15 @@ export function deleteCalendarEvent(target: string): CalendarStoreEvent | null {
   if (idx !== -1) {
     const deleted = globalEvents[idx];
     globalEvents.splice(idx, 1);
+
+    void (async () => {
+      try {
+        await supabase.from("events").delete().eq("id", deleted.id);
+      } catch {
+        // ignore deletion errors
+      }
+    })();
+
     return deleted;
   }
   return null;
@@ -97,6 +151,27 @@ export function editCalendarEvent(
   };
 
   globalEvents[idx] = updatedEvent;
+
+  void (async () => {
+    try {
+      await supabase
+        .from("events")
+        .update({
+          title: updatedEvent.title,
+          date_str: updatedEvent.dateStr,
+          start_hour: updatedEvent.start,
+          dur_hours: updatedEvent.dur,
+          category: updatedEvent.cat,
+          time_str: updatedEvent.time,
+          all_day: updatedEvent.allDay,
+          meta: updatedEvent.meta || null,
+        })
+        .eq("id", updatedEvent.id);
+    } catch {
+      // ignore update errors
+    }
+  })();
+
   return updatedEvent;
 }
 

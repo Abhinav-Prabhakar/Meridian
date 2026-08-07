@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { CalendarCategory } from "./CalendarFilterContext";
 import { supabase } from "@/lib/supabase/client";
 import { addDays, eventsForDate, formatDateStr } from "@/lib/dateUtils";
+import { syncCalendarEvents } from "@/lib/bot/calendarStore";
 
 export interface CalendarEvent {
   id: string;
@@ -373,15 +374,28 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error("Failed to load event collaboration details:", alertsResult.error?.message || inviteesResult.error?.message || proposalsResult.error?.message);
     }
 
-    setEvents(
-      baseEvents.map((event) =>
-        withEventExtras(
-          event,
-          (alertsResult.data as EventAlertRow[] | null) || [],
-          (inviteesResult.data as EventInviteeRow[] | null) || [],
-          (proposalsResult.data as EventProposalRow[] | null) || []
-        )
+    const fullEvents = baseEvents.map((event) =>
+      withEventExtras(
+        event,
+        (alertsResult.data as EventAlertRow[] | null) || [],
+        (inviteesResult.data as EventInviteeRow[] | null) || [],
+        (proposalsResult.data as EventProposalRow[] | null) || []
       )
+    );
+    setEvents(fullEvents);
+    syncCalendarEvents(
+      fullEvents.map((ev) => ({
+        id: ev.id,
+        dateStr: ev.dateStr,
+        start: ev.start,
+        dur: ev.dur,
+        title: ev.title,
+        cat: (["meeting", "focus", "personal", "strategy", "learning"].includes(ev.cat) ? ev.cat : "meeting") as any,
+        time: ev.time,
+        allDay: ev.allDay,
+        meta: ev.meta || undefined,
+        attendees: ev.attendees,
+      }))
     );
   }, []);
 
@@ -404,9 +418,21 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (active) void loadEvents(session?.user.id || null);
     });
 
+    const realtimeChannel = supabase
+      .channel("events_realtime_sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => {
+        if (active) {
+          supabase.auth.getUser().then(({ data }) => {
+            if (data.user?.id) void loadEvents(data.user.id);
+          });
+        }
+      })
+      .subscribe();
+
     return () => {
       active = false;
       authListener.subscription.unsubscribe();
+      supabase.removeChannel(realtimeChannel);
     };
   }, [loadEvents]);
 
