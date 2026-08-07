@@ -3,7 +3,7 @@
   <!-- Project Icon / Logo -->
   <p align="center">
     <samp>
-      <img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/master/icons/calendar.svg" width="100" alt="Meridian Logo" />
+      <img src="./public/logo.svg" width="100" alt="Meridian Logo" />
     </samp>
   </p>
 

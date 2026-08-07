@@ -76,15 +76,16 @@ class CaspianManager {
   }
 
   public async connectTelegram(botToken: string, groqApiKey?: string): Promise<IntegrationResult> {
-    if (!botToken?.trim()) {
+    const cleanToken = (botToken || "").trim().replace(/^@/, "");
+    if (!cleanToken) {
       return { success: false, message: "Bot token cannot be empty." };
     }
 
     if (groqApiKey?.trim()) this.config.groqApiKey = groqApiKey.trim();
 
     try {
-      const connection = await this.getClient().connectTelegram({ botToken: botToken.trim() });
-      this.config.telegramBotToken = botToken.trim();
+      const connection = await this.getClient().connectTelegram({ botToken: cleanToken });
+      this.config.telegramBotToken = cleanToken;
       this.markConnected("telegram", connection);
       await this.startListener();
       return { success: true, message: "Telegram bot connected via Caspian SDK." };
@@ -146,6 +147,7 @@ class CaspianManager {
   }
 
   public async refreshStatus(): Promise<ChannelStatus[]> {
+    await this.startListener();
     await Promise.all(
       (Object.entries(this.connectionIds) as Array<[IntegrationChannel, string | undefined]>).map(
         async ([channel, connectionId]) => {
@@ -223,7 +225,7 @@ class CaspianManager {
     const imageData = this.getImageData(message);
 
     try {
-      const channelGuide = await this.getClient().channelGuide(message.channel);
+      const channelGuide = await this.getClient().channelGuide(message.channel).catch(() => undefined);
       const result = await processAgentMessage(
         userText,
         this.config.groqApiKey || process.env.GROQ_API_KEY,
