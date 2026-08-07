@@ -528,6 +528,32 @@ body {
   box-shadow: 0 12px 28px -8px rgba(0,0,0,0.7);
   opacity: 0.92;
 }
+.event.event-create-preview {
+  z-index: 8;
+  pointer-events: none;
+  cursor: ns-resize;
+  border: 1px dashed var(--accent);
+  border-left: 3px solid var(--accent);
+  background: var(--accent-dim);
+  color: var(--fg);
+  box-shadow: 0 0 0 1px var(--accent-dim), 0 8px 20px -12px var(--accent);
+  transition: none;
+  opacity: 0.95;
+}
+.event-create-preview .event-create-label {
+  display: block;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.event-create-preview .event-time {
+  color: var(--accent);
+}
 .event.event-compact {
   padding: 4px 8px 4px 10px;
   display: flex; align-items: center; gap: 8px;
@@ -904,6 +930,8 @@ body {
   width: 100%; max-width: 440px;
   padding: 24px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   animation: modalUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -928,6 +956,17 @@ body {
 .modal-close:hover { color: var(--fg); }
 
 .modal-form { display: flex; flex-direction: column; gap: 16px; }
+.event-form-section { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); padding-top: 14px; }
+.form-hint { color: var(--fg-3); font-size: 10px; line-height: 1.4; }
+.weekday-picker { display: flex; gap: 4px; }
+.weekday-chip { width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); background: var(--bg-2); color: var(--fg-3); cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; }
+.weekday-chip:hover, .weekday-chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.add-invitee-btn { align-self: flex-start; padding: 6px 10px; font-size: 11px; }
+.invitee-draft-list { display: flex; flex-direction: column; gap: 4px; }
+.invitee-draft { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 7px 8px; background: var(--bg-2); border: 1px solid var(--border); color: var(--fg-2); font-size: 11px; }
+.invitee-draft button, .proposal-actions button { border: 0; background: none; color: var(--fg-3); cursor: pointer; font-size: 10px; }
+.invitee-draft button:hover, .proposal-actions button:hover { color: var(--accent); }
+.conflict-warning { padding: 10px 12px; border: 1px solid var(--orange); border-left: 3px solid var(--orange); background: var(--orange-dim); color: var(--orange); font-size: 11px; line-height: 1.45; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-checkbox-row {
@@ -968,6 +1007,31 @@ body {
   font-weight: 600; cursor: pointer; transition: all 0.15s;
 }
 .btn-submit:hover { background: var(--accent-hover); }
+
+.invitee-detail-list, .proposal-section, .availability-card { display: flex; flex-direction: column; gap: 8px; }
+.invitee-detail-row { display: grid; grid-template-columns: minmax(0, 1fr) 92px 92px; gap: 6px; align-items: center; padding: 8px; background: var(--bg-2); border: 1px solid var(--border); }
+.invitee-detail-name { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.invitee-detail-name strong { color: var(--fg); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.invitee-detail-name span { color: var(--fg-3); font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.invitee-status-select { padding: 6px 5px; font-size: 10px; min-width: 0; }
+.availability-card { padding: 10px 12px; border: 1px solid var(--border); background: var(--bg-2); margin-top: 2px; }
+.availability-status { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--fg-2); }
+.availability-status.busy { color: var(--orange); }
+.availability-status.free { color: var(--accent); }
+.availability-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+.availability-row { display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid var(--border); color: var(--fg-2); font-size: 10px; }
+.availability-value { text-transform: uppercase; letter-spacing: .08em; font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+.availability-value.free { color: var(--accent); }.availability-value.busy { color: var(--orange); }.availability-value.unknown { color: var(--fg-3); }
+.proposal-section { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 14px; }
+.proposal-section > .btn-cancel { align-self: flex-start; padding: 7px 10px; font-size: 11px; }
+.proposal-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; border: 1px solid var(--border); background: var(--bg-2); padding: 8px; font-size: 10px; }
+.proposal-row > div:first-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.proposal-row strong { color: var(--fg); font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+.proposal-row span { color: var(--fg-3); }
+.proposal-actions { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+.proposal-state { text-transform: uppercase; letter-spacing: .08em; color: var(--fg-3); font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+.proposal-state.accepted { color: var(--accent); }.proposal-state.declined { color: var(--red); }.proposal-state.pending { color: var(--yellow); }
+.event-capability-summary { display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; color: var(--fg-3); border-top: 1px solid var(--border); font: 9px 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .08em; }
 
 /* ============ MERIDIAN AUTH STYLES ============ */
 .auth-shell {
@@ -2135,4 +2199,3 @@ body {
   color: var(--accent);
   transform: translateY(-1px);
 }
-

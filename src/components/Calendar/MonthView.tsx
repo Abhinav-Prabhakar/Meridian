@@ -3,7 +3,7 @@
 import React from "react";
 import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
 import { useCalendarFilter } from "@/context/CalendarFilterContext";
-import { formatDateStr } from "@/lib/dateUtils";
+import { eventsForDate, formatDateStr } from "@/lib/dateUtils";
 import { TimeZoneLabel } from "./TimeZoneLabel";
 
 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -118,7 +118,7 @@ export const MonthView: React.FC = () => {
         }}
       >
         {cells.map((cell, idx) => {
-          const cellEvents = events.filter((e) => e.dateStr === cell.dateStr);
+          const cellEvents = eventsForDate(events, cell.dateStr);
 
           return (
             <div

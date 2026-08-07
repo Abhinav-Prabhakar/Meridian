@@ -10,6 +10,7 @@ import {
   formatDateStr,
   getCalendarHourLabels,
   getNowPosition,
+  eventsForDate,
 } from "@/lib/dateUtils";
 
 const hours = getCalendarHourLabels();
@@ -32,6 +33,24 @@ interface DragPreview {
   start: number;
 }
 
+interface CreatePreview {
+  dateStr: string;
+  start: number;
+  dur: number;
+}
+
+interface CreateSession {
+  pointerId: number;
+  dateStr: string;
+  anchorMinutes: number;
+  moved: boolean;
+  preview: CreatePreview;
+  frame: number | null;
+  onMove: (event: PointerEvent) => void;
+  onUp: () => void;
+  onCancel: () => void;
+}
+
 interface DragSession {
   event: CalendarEvent;
   pointerId: number;
@@ -49,7 +68,9 @@ export const WeekBody: React.FC = () => {
   const { activeCategories } = useCalendarFilter();
   const { showToast } = useToast();
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  const [createPreview, setCreatePreview] = useState<CreatePreview | null>(null);
   const dragSessionRef = useRef<DragSession | null>(null);
+  const createSessionRef = useRef<CreateSession | null>(null);
   const suppressClickRef = useRef(false);
 
   const monday = new Date(selectedDate);
@@ -80,8 +101,97 @@ export const WeekBody: React.FC = () => {
   };
 
   const handleSlotClick = (dateStr: string, hourIndex: number) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
     const startHour = CALENDAR_START_HOUR + hourIndex;
     openNewEventModal({ dateStr, startHour });
+  };
+
+  const finishCreateDrag = (commit: boolean) => {
+    const session = createSessionRef.current;
+    if (!session) return;
+
+    window.removeEventListener("pointermove", session.onMove);
+    window.removeEventListener("pointerup", session.onUp);
+    window.removeEventListener("pointercancel", session.onCancel);
+    if (session.frame !== null) cancelAnimationFrame(session.frame);
+
+    if (commit && session.moved) {
+      openNewEventModal({
+        dateStr: session.preview.dateStr,
+        startHour: session.preview.start,
+        dur: session.preview.dur,
+      });
+      suppressClickRef.current = true;
+    }
+
+    createSessionRef.current = null;
+    setCreatePreview(null);
+  };
+
+  const handleCreatePointerDown = (e: React.PointerEvent<HTMLDivElement>, dateStr: string) => {
+    if (e.button !== 0 || dragSessionRef.current || createSessionRef.current) return;
+
+    e.preventDefault();
+    const columnRect = e.currentTarget.getBoundingClientRect();
+    const anchorMinutes = Math.max(
+      0,
+      Math.min(CALENDAR_MINUTES - 10, Math.round(((e.clientY - columnRect.top) / 60) * 6) * 10)
+    );
+    const initialPreview = { dateStr, start: CALENDAR_START_HOUR + anchorMinutes / 60, dur: 1 / 6 };
+    const session: CreateSession = {
+      pointerId: e.pointerId,
+      dateStr,
+      anchorMinutes,
+      moved: false,
+      preview: initialPreview,
+      frame: null,
+      onMove: () => {},
+      onUp: () => {},
+      onCancel: () => {},
+    };
+
+    const schedulePreview = (preview: CreatePreview) => {
+      session.preview = preview;
+      if (session.frame !== null) return;
+      session.frame = requestAnimationFrame(() => {
+        session.frame = null;
+        if (createSessionRef.current === session) setCreatePreview(session.preview);
+      });
+    };
+
+    session.onMove = (moveEvent) => {
+      if (moveEvent.pointerId !== session.pointerId) return;
+      const distance = Math.hypot(moveEvent.clientX - e.clientX, moveEvent.clientY - e.clientY);
+      if (!session.moved && distance < 4) return;
+      session.moved = true;
+
+      const pointTarget = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY);
+      const targetColumn = pointTarget?.closest<HTMLElement>(".day-column");
+      if (!targetColumn?.dataset.date) return;
+      const columnRect = targetColumn.getBoundingClientRect();
+      const currentMinutes = Math.max(
+        0,
+        Math.min(CALENDAR_MINUTES, Math.round(((moveEvent.clientY - columnRect.top) / 60) * 6) * 10)
+      );
+      const startMinutes = Math.min(session.anchorMinutes, currentMinutes);
+      const durationMinutes = Math.max(10, Math.abs(currentMinutes - session.anchorMinutes));
+      schedulePreview({
+        dateStr: targetColumn.dataset.date,
+        start: CALENDAR_START_HOUR + startMinutes / 60,
+        dur: durationMinutes / 60,
+      });
+    };
+
+    session.onUp = () => finishCreateDrag(true);
+    session.onCancel = () => finishCreateDrag(false);
+    createSessionRef.current = session;
+    setCreatePreview(initialPreview);
+    window.addEventListener("pointermove", session.onMove);
+    window.addEventListener("pointerup", session.onUp);
+    window.addEventListener("pointercancel", session.onCancel);
   };
 
   const finishPointerDrag = (commit: boolean) => {
@@ -119,6 +229,7 @@ export const WeekBody: React.FC = () => {
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>, ev: CalendarEvent) => {
+    e.stopPropagation();
     if (e.button !== 0 || dragSessionRef.current) return;
     if ((e.target as HTMLElement).closest(".event-resize-handle")) return;
 
@@ -192,11 +303,18 @@ export const WeekBody: React.FC = () => {
 
   useEffect(() => () => {
     const session = dragSessionRef.current;
-    if (!session) return;
-    window.removeEventListener("pointermove", session.onMove);
-    window.removeEventListener("pointerup", session.onUp);
-    window.removeEventListener("pointercancel", session.onCancel);
-    if (session.frame !== null) cancelAnimationFrame(session.frame);
+    if (session) {
+      window.removeEventListener("pointermove", session.onMove);
+      window.removeEventListener("pointerup", session.onUp);
+      window.removeEventListener("pointercancel", session.onCancel);
+      if (session.frame !== null) cancelAnimationFrame(session.frame);
+    }
+    const createSession = createSessionRef.current;
+    if (!createSession) return;
+    window.removeEventListener("pointermove", createSession.onMove);
+    window.removeEventListener("pointerup", createSession.onUp);
+    window.removeEventListener("pointercancel", createSession.onCancel);
+    if (createSession.frame !== null) cancelAnimationFrame(createSession.frame);
   }, []);
 
   // Bottom handle resize handler (10-minute snapping)
@@ -245,8 +363,8 @@ export const WeekBody: React.FC = () => {
 
         const dateStr = formatDateStr(columnDate);
         const isToday = dateStr === todayStr;
-        const dayEvents = events.filter((event) =>
-          !event.allDay && (dragPreview?.id === event.id ? dragPreview.dateStr === dateStr : event.dateStr === dateStr)
+        const dayEvents = eventsForDate(events, dateStr).filter((event) =>
+          !event.allDay && (dragPreview?.id === event.id ? dragPreview.dateStr === dateStr : true)
         );
 
         return (
@@ -255,6 +373,7 @@ export const WeekBody: React.FC = () => {
             className={`day-column ${isToday ? "today-col" : ""}`}
             data-day={dayIdx}
             data-date={dateStr}
+            onPointerDown={(e) => handleCreatePointerDown(e, dateStr)}
           >
             {Array.from({ length: 14 }).map((_, hIdx) => (
               <div
@@ -328,6 +447,31 @@ export const WeekBody: React.FC = () => {
           </div>
         );
       })}
+
+      {createPreview && (() => {
+        const previewColumn = Array.from({ length: 7 }, (_, dayIdx) => {
+          const date = new Date(monday);
+          date.setDate(date.getDate() + dayIdx);
+          return formatDateStr(date);
+        }).indexOf(createPreview.dateStr);
+        if (previewColumn < 0) return null;
+        return (
+          <div
+            className="event event-create-preview"
+            style={{
+              top: `${(createPreview.start - CALENDAR_START_HOUR) * 60}px`,
+              height: `${Math.max(10, createPreview.dur * 60 - 3)}px`,
+              left: `calc(64px + (100% - 64px) / 7 * ${previewColumn} + 4px)`,
+              right: "auto",
+              width: "calc((100% - 64px) / 7 - 8px)",
+            }}
+            aria-label={`New event, ${buildTimeRangeStr(createPreview.start, createPreview.dur)}`}
+          >
+            <span className="event-create-label">New event</span>
+            <span className="event-time">{buildTimeRangeStr(createPreview.start, createPreview.dur)}</span>
+          </div>
+        );
+      })()}
 
       {/* Now line at current live time */}
       {nowTop !== null && <div className="now-line" style={{ top: `${nowTop}px` }}></div>}

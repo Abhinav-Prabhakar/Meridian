@@ -10,6 +10,7 @@ import {
   formatDateStr,
   getCalendarHourLabels,
   getNowPosition,
+  eventsForDate,
 } from "@/lib/dateUtils";
 import { TimeZoneLabel } from "./TimeZoneLabel";
 import { AllDayRow } from "./AllDayRow";
@@ -26,13 +27,24 @@ function buildTimeRangeStr(startHour: number, durHours: number): string {
   return `${formatHourMin(startHour)} — ${formatHourMin(startHour + durHours)}`;
 }
 
+interface CreateSession {
+  pointerId: number;
+  anchorMinutes: number;
+  moved: boolean;
+  preview: { start: number; dur: number };
+  frame: number | null;
+  onMove: (event: PointerEvent) => void;
+  onUp: () => void;
+  onCancel: () => void;
+}
+
 export const DayView: React.FC = () => {
   const { selectedDate, events, updateEvent, openEventDetails, openNewEventModal } = useCalendar();
   const { activeCategories } = useCalendarFilter();
   const { showToast } = useToast();
 
   const dateStr = formatDateStr(selectedDate);
-  const dayEvents = events.filter((e) => e.dateStr === dateStr && !e.allDay);
+  const dayEvents = eventsForDate(events, dateStr).filter((e) => !e.allDay);
 
   const fullDateTitle = selectedDate.toLocaleDateString("en-US", {
     weekday: "long",
@@ -42,6 +54,9 @@ export const DayView: React.FC = () => {
   });
 
   const [nowTop, setNowTop] = useState<number | null>(null);
+  const [createPreview, setCreatePreview] = useState<{ start: number; dur: number } | null>(null);
+  const createSessionRef = React.useRef<CreateSession | null>(null);
+  const suppressClickRef = React.useRef(false);
   const isToday = dateStr === formatDateStr(new Date());
 
   useEffect(() => {
@@ -57,8 +72,86 @@ export const DayView: React.FC = () => {
   };
 
   const handleSlotClick = (hIdx: number) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
     openNewEventModal({ dateStr, startHour: CALENDAR_START_HOUR + hIdx });
   };
+
+  const finishCreateDrag = (commit: boolean) => {
+    const session = createSessionRef.current;
+    if (!session) return;
+    window.removeEventListener("pointermove", session.onMove);
+    window.removeEventListener("pointerup", session.onUp);
+    window.removeEventListener("pointercancel", session.onCancel);
+    if (session.frame !== null) cancelAnimationFrame(session.frame);
+
+    if (commit && session.moved) {
+      openNewEventModal({ dateStr, startHour: session.preview.start, dur: session.preview.dur });
+      suppressClickRef.current = true;
+    }
+    createSessionRef.current = null;
+    setCreatePreview(null);
+  };
+
+  const handleCreatePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || createSessionRef.current) return;
+    e.preventDefault();
+    const columnRect = e.currentTarget.getBoundingClientRect();
+    const anchorMinutes = Math.max(
+      0,
+      Math.min(CALENDAR_MINUTES - 10, Math.round(((e.clientY - columnRect.top) / 60) * 6) * 10)
+    );
+    const initialPreview = { start: CALENDAR_START_HOUR + anchorMinutes / 60, dur: 1 / 6 };
+    const session: CreateSession = {
+      pointerId: e.pointerId,
+      anchorMinutes,
+      moved: false,
+      preview: initialPreview,
+      frame: null as number | null,
+      onMove: () => {},
+      onUp: () => {},
+      onCancel: () => {},
+    };
+    const schedulePreview = (preview: { start: number; dur: number }) => {
+      session.preview = preview;
+      if (session.frame !== null) return;
+      session.frame = requestAnimationFrame(() => {
+        session.frame = null;
+        if (createSessionRef.current === session) setCreatePreview(session.preview);
+      });
+    };
+    session.onMove = (moveEvent) => {
+      if (moveEvent.pointerId !== session.pointerId) return;
+      const distance = Math.hypot(moveEvent.clientX - e.clientX, moveEvent.clientY - e.clientY);
+      if (!session.moved && distance < 4) return;
+      session.moved = true;
+      const currentMinutes = Math.max(
+        0,
+        Math.min(CALENDAR_MINUTES, Math.round(((moveEvent.clientY - columnRect.top) / 60) * 6) * 10)
+      );
+      const startMinutes = Math.min(session.anchorMinutes, currentMinutes);
+      const durationMinutes = Math.max(10, Math.abs(currentMinutes - session.anchorMinutes));
+      schedulePreview({ start: CALENDAR_START_HOUR + startMinutes / 60, dur: durationMinutes / 60 });
+    };
+    session.onUp = () => finishCreateDrag(true);
+    session.onCancel = () => finishCreateDrag(false);
+    createSessionRef.current = session;
+    setCreatePreview(initialPreview);
+    window.addEventListener("pointermove", session.onMove);
+    window.addEventListener("pointerup", session.onUp);
+    window.addEventListener("pointercancel", session.onCancel);
+  };
+
+  useEffect(() => () => {
+    const session = createSessionRef.current;
+    if (!session) return;
+    window.removeEventListener("pointermove", session.onMove);
+    window.removeEventListener("pointerup", session.onUp);
+    window.removeEventListener("pointercancel", session.onCancel);
+    if (session.frame !== null) cancelAnimationFrame(session.frame);
+  }, []);
 
   // Drag and drop with 10-minute snapping
   const handleDragStart = (e: React.DragEvent, ev: CalendarEvent) => {
@@ -153,6 +246,7 @@ export const DayView: React.FC = () => {
         <div
           className="day-column today-col"
           style={{ borderRight: "none", position: "relative" }}
+          onPointerDown={handleCreatePointerDown}
           onDragOver={handleDragOver}
           onDrop={handleDropOnColumn}
         >
@@ -175,6 +269,7 @@ export const DayView: React.FC = () => {
             return (
               <div
                 key={ev.id}
+                onPointerDown={(e) => e.stopPropagation()}
                 draggable={true}
                 onDragStart={(e) => handleDragStart(e, ev)}
                 className={`event cat-${ev.cat} ${compact ? "event-compact" : ""} ${
@@ -224,6 +319,20 @@ export const DayView: React.FC = () => {
               </div>
             );
           })}
+
+          {createPreview && (
+            <div
+              className="event event-create-preview"
+              style={{
+                top: `${(createPreview.start - CALENDAR_START_HOUR) * 60}px`,
+                height: `${Math.max(10, createPreview.dur * 60 - 3)}px`,
+              }}
+              aria-label={`New event, ${buildTimeRangeStr(createPreview.start, createPreview.dur)}`}
+            >
+              <span className="event-create-label">New event</span>
+              <span className="event-time">{buildTimeRangeStr(createPreview.start, createPreview.dur)}</span>
+            </div>
+          )}
         </div>
 
         {/* Now line */}

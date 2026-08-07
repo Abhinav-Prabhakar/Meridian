@@ -3,6 +3,7 @@
 import React from "react";
 import { useCalendar, CalendarEvent } from "@/context/CalendarContext";
 import { useCalendarFilter } from "@/context/CalendarFilterContext";
+import { addDays, eventsForDate, formatDateStr } from "@/lib/dateUtils";
 
 const categoryColors: Record<string, { color: string; bg: string }> = {
   strategy: { color: "var(--accent)", bg: "var(--accent-dim)" },
@@ -13,20 +14,22 @@ const categoryColors: Record<string, { color: string; bg: string }> = {
 };
 
 export const AgendaView: React.FC = () => {
-  const { events, openEventDetails, setSelectedDate } = useCalendar();
+  const { events, openEventDetails, setSelectedDate, selectedDate } = useCalendar();
   const { activeCategories } = useCalendarFilter();
 
   // Group events by dateStr
   const groupedEvents: Record<string, CalendarEvent[]> = {};
-  events
-    .filter((e) => activeCategories[e.cat])
-    .sort((a, b) => (a.dateStr + a.start).localeCompare(b.dateStr + b.start))
-    .forEach((e) => {
-      if (!groupedEvents[e.dateStr]) {
-        groupedEvents[e.dateStr] = [];
-      }
-      groupedEvents[e.dateStr].push(e);
-    });
+  for (let offset = -30; offset <= 90; offset += 1) {
+    const dateStr = formatDateStr(addDays(selectedDate, offset));
+    eventsForDate(events, dateStr)
+      .filter((event) => activeCategories[event.cat])
+      .forEach((event) => {
+        if (!groupedEvents[dateStr]) groupedEvents[dateStr] = [];
+        groupedEvents[dateStr].push(event);
+      });
+  }
+
+  Object.values(groupedEvents).forEach((dayEvents) => dayEvents.sort((a, b) => a.start - b.start));
 
   const sortedDates = Object.keys(groupedEvents).sort();
 
