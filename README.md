@@ -2,9 +2,7 @@
 
   <!-- Project Icon / Logo -->
   <p align="center">
-    <samp>
-      <img src="./public/logo.svg" width="100" alt="Meridian Logo" />
-    </samp>
+    <img src="public/logo.svg" width="280" alt="Meridian Logo" />
   </p>
 
   <!-- Centered Title & Subtitle -->

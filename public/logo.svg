@@ -1,20 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" fill="none">
-  <!-- Outer Chamfered Box & Inner Cutout in Lime (#d4ff3d) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" width="400" height="100" fill="none">
+  <style>
+    .brand-text { fill: #ffffff; }
+    .sub-text { fill: #8b949e; }
+    @media (prefers-color-scheme: light) {
+      .brand-text { fill: #0d1117; }
+      .sub-text { fill: #57606a; }
+    }
+  </style>
+  <!-- Exact Lime (#d4ff3d) Brand Mark Cutout Polygon -->
   <path fill-rule="evenodd" clip-rule="evenodd" d="
-    M 0 0 
-    H 200 
-    V 140 
-    L 140 200 
-    H 0 
-    V 0 
+    M 10 10 
+    H 90 
+    V 66 
+    L 66 90 
+    H 10 
+    V 10 
     Z 
-    M 44 44 
-    V 156 
-    H 109 
-    L 156 109 
-    V 44 
-    H 44 
+    M 28 28 
+    V 72 
+    H 62 
+    L 72 62 
+    V 28 
+    H 28 
     Z" 
     fill="#d4ff3d" 
   />
+  <!-- Typography: MERIDIAN calendar os -->
+  <text x="110" y="56" class="brand-text" font-family="'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="40" letter-spacing="4">MERIDIAN</text>
+  <text x="112" y="78" class="sub-text" font-family="'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" font-size="16" letter-spacing="3">calendar os</text>
 </svg>
