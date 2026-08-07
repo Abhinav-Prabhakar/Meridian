@@ -15,6 +15,8 @@ class CaspianManager {
   private client: CommClient | null = null;
   private isListening = false;
   private isHandlerRegistered = false;
+  private lastProcessedSeq: number | undefined = undefined;
+  private readonly processedMessageIds = new Set<string>();
   private readonly connectionIds: Partial<Record<IntegrationChannel, string>> = {};
   private config: CaspianBotConfig = {
     activeChannels: [],
@@ -181,7 +183,18 @@ class CaspianManager {
     }
 
     await this.startListener();
-    void this.getClient().dispatchPending().catch(() => {});
+    void (async () => {
+      try {
+        if (this.lastProcessedSeq === undefined) {
+          const clientAny = this.getClient() as unknown as { latestSeq: () => Promise<number> };
+          this.lastProcessedSeq = await clientAny.latestSeq();
+        } else {
+          this.lastProcessedSeq = await this.getClient().dispatchPending(this.lastProcessedSeq);
+        }
+      } catch {
+        // Ignore background dispatch errors
+      }
+    })();
 
     return this.getStatus();
   }
@@ -275,6 +288,14 @@ class CaspianManager {
   }
 
   private async handleMessage(message: Message): Promise<void> {
+    if (!message.id || this.processedMessageIds.has(message.id)) {
+      return;
+    }
+    this.processedMessageIds.add(message.id);
+    if (this.processedMessageIds.size > 1000) {
+      const firstItem = this.processedMessageIds.values().next().value;
+      if (firstItem) this.processedMessageIds.delete(firstItem);
+    }
     const userText = message.text?.trim() || "Attached image request";
     const imageData = this.getImageData(message);
 
