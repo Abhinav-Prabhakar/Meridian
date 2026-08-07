@@ -74,6 +74,7 @@ export function addCalendarEvent(data: {
   const dur = data.durHours ?? 1;
   const allDay = data.allDay === true;
   const time = allDay ? "All day" : formatTimeRange(data.startHour, dur);
+  const cleanMeta = data.meta ? data.meta.replace(/^(?:📍\s*)?Added via.*/i, "").trim() : undefined;
   const newEvent: CalendarStoreEvent = {
     id: Date.now().toString(),
     dateStr: data.dateStr,
@@ -83,7 +84,7 @@ export function addCalendarEvent(data: {
     cat: data.cat || "meeting",
     time,
     allDay,
-    meta: data.meta,
+    meta: cleanMeta || undefined,
     attendees: data.attendees || ["Bot", "You"],
   };
   globalEvents.push(newEvent);

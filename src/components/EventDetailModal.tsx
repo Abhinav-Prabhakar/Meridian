@@ -128,7 +128,7 @@ export const EventDetailModal: React.FC = () => {
               marginBottom: "16px",
             }}
           >
-            📍 {event.meta}
+            {event.meta}
           </div>
         )}
 

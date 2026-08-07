@@ -148,7 +148,7 @@ export const AgendaView: React.FC = () => {
                           </div>
                           {ev.meta && (
                             <div style={{ fontSize: "10px", color: "var(--fg-3)" }}>
-                              📍 {ev.meta}
+                              {ev.meta}
                             </div>
                           )}
                         </div>
