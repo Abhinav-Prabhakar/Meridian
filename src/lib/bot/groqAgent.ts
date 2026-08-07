@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import {
   getCalendarEvents,
+  refreshGlobalEventsFromSupabase,
   addCalendarEvent,
   editCalendarEvent,
   deleteCalendarEvent,
@@ -113,12 +114,12 @@ const CALENDAR_TOOLS = [
     function: {
       name: "get_calendar_events",
       description:
-        "List the user's calendar events. Pass a date string (YYYY-MM-DD) to filter to that day, or omit it to return everything.",
+        "List the user's calendar events. Pass a date string (YYYY-MM-DD) to filter to that day, or omit it/pass null to return everything.",
       parameters: {
         type: "object",
         properties: {
           dateStr: {
-            type: "string",
+            type: ["string", "null"],
             description: "Optional date in YYYY-MM-DD format",
           },
         },
@@ -134,11 +135,10 @@ const CALENDAR_TOOLS = [
         type: "object",
         properties: {
           dateStr: {
-            type: "string",
+            type: ["string", "null"],
             description: "Date in YYYY-MM-DD format",
           },
         },
-        required: ["dateStr"],
       },
     },
   },
@@ -154,16 +154,16 @@ const CALENDAR_TOOLS = [
           dateStr: { type: "string", description: "Date in YYYY-MM-DD format" },
           startHour: {
             type: "number",
-            description: "Start hour as a decimal, e.g. 14 for 2:00 PM, 9.5 for 9:30 AM",
+            description: "Start hour as a decimal, e.g. 14 for 2:00 PM, 9.5 for 9:30 AM, 10 for 10:00 AM",
           },
-          durHours: { type: "number", description: "Duration in hours, defaults to 1" },
+          durHours: { type: ["number", "null"], description: "Duration in hours, defaults to 1" },
           cat: {
-            type: "string",
-            enum: ["meeting", "focus", "personal", "strategy", "learning"],
+            type: ["string", "null"],
+            enum: ["meeting", "focus", "personal", "strategy", "learning", null],
             description: "Event category",
           },
-          meta: { type: "string", description: "Optional metadata / notes" },
-          allDay: { type: "boolean", description: "Whether this is an all-day event" },
+          meta: { type: ["string", "null"], description: "Optional metadata / notes" },
+          allDay: { type: ["boolean", "null"], description: "Whether this is an all-day event" },
         },
         required: ["title", "dateStr", "startHour"],
       },
@@ -178,10 +178,10 @@ const CALENDAR_TOOLS = [
         type: "object",
         properties: {
           target: { type: "string", description: "Existing event title or id to modify" },
-          newTitle: { type: "string", description: "Optional new title" },
-          dateStr: { type: "string", description: "Optional new date in YYYY-MM-DD format" },
-          startHour: { type: "number", description: "Optional new start hour" },
-          durHours: { type: "number", description: "Optional new duration in hours" },
+          newTitle: { type: ["string", "null"], description: "Optional new title" },
+          dateStr: { type: ["string", "null"], description: "Optional new date in YYYY-MM-DD format" },
+          startHour: { type: ["number", "null"], description: "Optional new start hour" },
+          durHours: { type: ["number", "null"], description: "Optional new duration in hours" },
         },
         required: ["target"],
       },
@@ -234,6 +234,7 @@ export async function processAgentMessage(
     baseURL: GROQ_BASE_URL,
   });
   const model = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+  await refreshGlobalEventsFromSupabase().catch(() => {});
   const eventsSnapshot = getCalendarEvents();
 
   const messages: ChatCompletionMessageParam[] = [
@@ -245,6 +246,7 @@ export async function processAgentMessage(
         'Use the reference date to interpret relative terms like "today", "tomorrow", and "next Friday", and always emit dates in YYYY-MM-DD format.',
         `Current User Schedule: ${JSON.stringify(eventsSnapshot)}.`,
         channelGuide ? `Channel guidance:\n${channelGuide}` : "",
+        "When the user asks to edit, move, or reschedule an existing event (e.g., 'edit it to swimming instead', 'move it to morning'), check the current schedule for the target event title/id (e.g. 'Chess') and pass target: 'Chess' (or event ID) to edit_calendar_event.",
         "You have tools to manage the calendar. Inspect or modify events with them, then reply in concise Markdown summarizing what you did or found.",
       ].join("\n"),
     },

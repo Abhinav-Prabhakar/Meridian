@@ -4,7 +4,38 @@ import { CalendarStoreEvent } from "./types";
 // the bot. Keep this process-local store empty until that happens.
 let globalEvents: CalendarStoreEvent[] = [];
 
+export async function refreshGlobalEventsFromSupabase(): Promise<CalendarStoreEvent[]> {
+  try {
+    const { data: rows } = await supabase
+      .from("events")
+      .select("*")
+      .order("date_str", { ascending: true })
+      .order("start_hour", { ascending: true });
+
+    if (Array.isArray(rows) && rows.length > 0) {
+      globalEvents = rows.map((r: Record<string, unknown>) => ({
+        id: String(r.id),
+        dateStr: String(r.date_str),
+        start: Number(r.start_hour) || 9,
+        dur: Number(r.dur_hours) || 1,
+        title: String(r.title),
+        cat: (r.category as CalendarStoreEvent["cat"]) || "meeting",
+        time: String(r.time_str || "09:00 — 10:00"),
+        allDay: Boolean(r.all_day),
+        meta: r.meta ? String(r.meta) : undefined,
+        attendees: Array.isArray(r.attendees) ? (r.attendees as string[]) : [],
+      }));
+    }
+  } catch {
+    // Ignore fetch error
+  }
+  return globalEvents;
+}
+
 export function getCalendarEvents(dateStr?: string): CalendarStoreEvent[] {
+  if (globalEvents.length === 0) {
+    void refreshGlobalEventsFromSupabase();
+  }
   if (dateStr) {
     return globalEvents.filter((ev) => ev.dateStr === dateStr);
   }
