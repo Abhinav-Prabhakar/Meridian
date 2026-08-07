@@ -138,7 +138,7 @@ export const TeamInviteModal: React.FC = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="stats-grid fade-up-2">
+        <div className="modal-stats-grid fade-up-2">
           <div className="stat-item">
             <span className="label font-mono">Total Seats</span>
             <div className="stat-val font-mono">04</div>
