@@ -48,7 +48,7 @@ function executeTool(
         durHours: args.durHours != null ? Number(args.durHours) : 1,
         allDay: args.allDay === true,
         cat: args.cat as CalendarStoreEvent["cat"],
-        meta: args.meta ? String(args.meta) : "Created via Meridian AI Assistant",
+        meta: args.meta ? String(args.meta) : undefined,
       });
       return {
         result: { ok: true, event },

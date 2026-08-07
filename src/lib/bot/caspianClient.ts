@@ -147,20 +147,42 @@ class CaspianManager {
   }
 
   public async refreshStatus(): Promise<ChannelStatus[]> {
-    await this.startListener();
-    await Promise.all(
-      (Object.entries(this.connectionIds) as Array<[IntegrationChannel, string | undefined]>).map(
-        async ([channel, connectionId]) => {
-          if (!connectionId) return;
-          try {
-            const connection = await this.getClient().getConnection(connectionId);
-            this.markConnected(channel, connection);
-          } catch {
-            // Keep the last known status if the gateway is temporarily unavailable.
+    try {
+      const clientAny = this.getClient() as unknown as { request: (method: string, path: string) => Promise<unknown> };
+      const connections = (await clientAny.request("GET", "/v1/connections")) as Connection[];
+      if (Array.isArray(connections)) {
+        const sortedConns = [...connections].sort((a, b) => {
+          const aActive = a.status === "active" || a.status === "connected" ? 1 : 0;
+          const bActive = b.status === "active" || b.status === "connected" ? 1 : 0;
+          return aActive - bActive;
+        });
+
+        for (const conn of sortedConns) {
+          const channel = conn.channel as IntegrationChannel;
+          if (channel && channel in this.channels) {
+            this.markConnected(channel, conn);
           }
         }
-      )
-    );
+      }
+    } catch {
+      await Promise.all(
+        (Object.entries(this.connectionIds) as Array<[IntegrationChannel, string | undefined]>).map(
+          async ([channel, connectionId]) => {
+            if (!connectionId) return;
+            try {
+              const connection = await this.getClient().getConnection(connectionId);
+              this.markConnected(channel, connection);
+            } catch {
+              // Keep the last known status if the gateway is temporarily unavailable.
+            }
+          }
+        )
+      );
+    }
+
+    await this.startListener();
+    void this.getClient().dispatchPending().catch(() => {});
+
     return this.getStatus();
   }
 
@@ -267,7 +289,13 @@ class CaspianManager {
       ...this.channels[channel],
       connected: active,
       active,
-      statusText: awaitingAuthorization ? "Authorization required" : active ? "Connected & Active" : connection.status || "Provisioning",
+      statusText: awaitingAuthorization
+        ? "Authorization required"
+        : active
+        ? connection.address
+          ? `Connected & Active (${connection.address})`
+          : "Connected & Active"
+        : connection.status || "Provisioning",
       address: connection.address,
       authorizeUrl: connection.authorize_url,
       connectionId: connection.id,

@@ -78,12 +78,16 @@ function MainContent() {
     // Comprehensive professional keyboard shortcuts
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey ||
+        (e.target as HTMLElement)?.isContentEditable ||
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement
       ) {
-        if (e.key === "Escape") {
-          (e.target as HTMLElement).blur();
+        if (e.key === "Escape" && e.target instanceof HTMLElement) {
+          e.target.blur();
         }
         return;
       }
