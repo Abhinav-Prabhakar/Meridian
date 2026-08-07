@@ -5,8 +5,7 @@
     <img src="public/logo.svg" width="280" alt="Meridian Logo" />
   </p>
 
-  <!-- Centered Title & Subtitle -->
-  <h1>⚡ MERIDIAN</h1>
+  <!-- Centered Subtitle -->
   <p><b>The Next-Generation Calendar Operating System</b></p>
 
   <!-- High-Impact Tagline -->
@@ -49,17 +48,9 @@
 
 By fusing the **Caspian SDK**, **Groq's ultra-low latency GPT-OSS-120b**, and **Supabase**, Meridian acts as an ambient scheduling intelligence. It continuously monitors your communication channels (Slack, Telegram, Discord, Email), instantly extracting messy, unstructured natural language into a beautifully organized, conflict-free timeline.
 
-No more manual data entry. No more context switching. Just pure temporal flow.
-
----
-
-## 📸 Product Showcase
-
 <p align="center">
   <img src="./public/shot.png" alt="Meridian Calendar OS screenshot" width="100%" style="border-radius: 10px; border: 1px solid #30363d; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
 </p>
-
----
 
 ## ✨ Core Value Propositions
 
