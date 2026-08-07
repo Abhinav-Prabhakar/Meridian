@@ -8,7 +8,10 @@ function isIntegrationChannel(value: unknown): value is IntegrationChannel {
   return typeof value === "string" && channels.includes(value as IntegrationChannel);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const host = req.headers.get("host");
+  if (host) void caspianManager.ensureWebhookConfigured(host);
+
   const status = await caspianManager.refreshStatus();
   return NextResponse.json({
     status,
@@ -18,6 +21,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const host = req.headers.get("host");
+    if (host) void caspianManager.ensureWebhookConfigured(host);
+
     const body = (await req.json()) as Record<string, unknown>;
     const { channel, botToken, groqApiKey, action, username, displayName } = body;
 

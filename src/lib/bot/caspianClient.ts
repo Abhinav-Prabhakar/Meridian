@@ -225,11 +225,43 @@ class CaspianManager {
     return this.client;
   }
 
-  private async startListener(): Promise<void> {
+  public async handleWebhookEvent(event: unknown): Promise<boolean> {
+    if (!event || typeof event !== "object") return false;
+    const payload = (event as Record<string, unknown>).event || event;
+    try {
+      this.ensureHandlerRegistered();
+      const clientAny = this.getClient() as unknown as { dispatchEvent: (ev: unknown) => Promise<void> };
+      await clientAny.dispatchEvent(payload);
+      return true;
+    } catch (err) {
+      console.error("Caspian webhook dispatch failed:", err);
+      return false;
+    }
+  }
+
+  public async ensureWebhookConfigured(hostUrl?: string): Promise<void> {
+    const rawUrl = hostUrl || process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+    if (!rawUrl) return;
+
+    const baseUrl = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+    const webhookUrl = `${baseUrl.replace(/\/+$/, "")}/api/bot/webhook`;
+
+    try {
+      await this.getClient().setWebhook(webhookUrl);
+    } catch {
+      // Ignore webhook registration failure if gateway un-routable locally
+    }
+  }
+
+  private ensureHandlerRegistered(): void {
     if (!this.isHandlerRegistered) {
       this.getClient().onMessage(async (message) => this.handleMessage(message));
       this.isHandlerRegistered = true;
     }
+  }
+
+  private async startListener(): Promise<void> {
+    this.ensureHandlerRegistered();
 
     if (!this.isListening) {
       this.isListening = true;
