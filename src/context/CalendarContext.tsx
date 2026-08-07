@@ -347,7 +347,7 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const { data, error } = await supabase
       .from("events")
       .select("*")
-      .eq("user_id", userId)
+      .or(`user_id.eq.${userId},user_id.is.null`)
       .order("date_str", { ascending: true })
       .order("start_hour", { ascending: true });
 
